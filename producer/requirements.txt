@@ -1,0 +1,9 @@
+# Data processing
+pandas>=2.0.0
+numpy>=1.26.0
+
+# Kafka producer
+confluent-kafka>=2.10.0
+
+# Config management
+python-dotenv>=1.0.0

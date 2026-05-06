@@ -1,0 +1,18 @@
+# Data processing
+pandas>=2.0.0
+numpy>=1.26.0
+
+# Kafka producer
+confluent-kafka>=2.10.0
+
+# Config management
+python-dotenv>=1.0.0
+
+# Spark Streaming
+pyspark==3.5.5
+
+# InfluxDB client
+influxdb-client>=1.40.0
+
+# Machine Learning
+scikit-learn>=1.4.0
