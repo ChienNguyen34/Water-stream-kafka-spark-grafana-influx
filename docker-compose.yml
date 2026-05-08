@@ -55,6 +55,8 @@ services:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/dashboards
 
   spark-master:
     build:
@@ -71,6 +73,7 @@ services:
       - "8090:8090"
     volumes:
       - ./spark_streaming:/opt/spark-apps
+      - spark_checkpoint:/tmp/spark-checkpoint
 
   spark-worker:
     build:
@@ -103,3 +106,4 @@ volumes:
   kafka_data:
   influxdb_data:
   grafana_data:
+  spark_checkpoint:

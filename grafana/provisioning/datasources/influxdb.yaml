@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: influxdb
+    type: influxdb
+    uid: influxdb-water
+    url: http://influxdb:8086
+    access: proxy
+    isDefault: true
+    jsonData:
+      version: Flux
+      organization: bigdata
+      defaultBucket: water_bucket
+    secureJsonData:
+      token: my-super-secret-token

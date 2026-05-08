@@ -1,6 +1,7 @@
-from influxdb_client import InfluxDBClient, Point
+from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 from pathlib import Path
+from datetime import datetime, timezone
 import os
 
 try:
@@ -51,7 +52,10 @@ def write_to_influx(df_batch, batch_id):
             if val is not None:
                 point = point.field(f, int(val))
 
-        point = point.time(row.timestamp)
+        # Dùng thời gian hiện tại làm timestamp InfluxDB (processing time)
+        # để Grafana hiển thị real-time. Timestamp gốc lưu như field riêng.
+        point = point.field("event_time", str(row.timestamp))
+        point = point.time(datetime.now(timezone.utc), WritePrecision.NS)
         points.append(point)
 
     write_api.write(bucket=INFLUX_BUCKET, record=points)

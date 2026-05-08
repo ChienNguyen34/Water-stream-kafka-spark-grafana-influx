@@ -82,39 +82,14 @@ df_clean = df_parsed.filter(col("L_T1").isNotNull())
 df_flagged = df_clean.withColumn(
     "alert_type",
     when(
-        (col("S_PU1") == 1) & (col("L_T1") > 6.3), lit("PU1_STUCK_ON")
-    ).when(
-        (col("S_PU1") == 0) & (col("L_T1") < 4.0), lit("PU1_STUCK_OFF")
-    ).when(
-        col("ATT_FLAG") == 1, lit("LABELLED_ATTACK")
-    ).otherwise(lit("NORMAL"))
-)
-
-query = df_flagged.writeStream \
-    .foreachBatch(write_to_influx) \
-    .option("checkpointLocation", "/tmp/spark-checkpoint") \
-    .start()
-
-query.awaitTermination()
-
-
-df_parsed = df_raw \
-    .select(from_json(col("value").cast("string"), WATER_SCHEMA).alias("data")) \
-    .select("data.*")
-
-df_clean = df_parsed.filter(col("L_T1").isNotNull())
-
-df_flagged = df_clean.withColumn(
-    "alert_type",
-    when(
         # PU1 đang ON nhưng T1 > 6.3 (đáng lẽ phải tắt)
         (col("S_PU1") == 1) & (col("L_T1") > 6.3), lit("PU1_STUCK_ON")
     ).when(
         # PU1 đang OFF nhưng T1 < 4.0 (đáng lẽ phải bật)
         (col("S_PU1") == 0) & (col("L_T1") < 4.0), lit("PU1_STUCK_OFF")
-    ).when(
-        col("ATT_FLAG") == 1, lit("LABELLED_ATTACK")
     ).otherwise(lit("NORMAL"))
+    # ATT_FLAG được giữ lại như field riêng trong InfluxDB để đánh giá sau,
+    # KHÔNG dùng làm điều kiện detection — tránh data leakage.
 )
 
 query = df_flagged.writeStream \

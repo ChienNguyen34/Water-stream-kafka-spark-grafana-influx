@@ -1,0 +1,1 @@
+from(bucket: "water_bucket") |> range(start: 2016-01-01T00:00:00Z) |> filter(fn: (r) => r._measurement == "water_telemetry") |> filter(fn: (r) => r._field == "L_T1") |> count()

@@ -1,0 +1,311 @@
+{
+  "title": "BATADAL Water Network",
+  "uid": "batadal-water",
+  "schemaVersion": 39,
+  "refresh": "5s",
+  "time": { "from": "now-10m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Network Topology — CTOWN (Supply Chain)",
+      "type": "canvas",
+      "gridPos": { "h": 26, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-water" },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"water_bucket\")\n  |> range(start: -2m)\n  |> filter(fn: (r) => r._measurement == \"water_telemetry\")\n  |> filter(fn: (r) =>\n      r._field == \"L_T1\" or r._field == \"L_T2\" or r._field == \"L_T3\" or\n      r._field == \"L_T4\" or r._field == \"L_T5\" or r._field == \"L_T6\" or\n      r._field == \"L_T7\" or\n      r._field == \"S_PU1\" or r._field == \"S_PU2\" or r._field == \"S_PU3\" or\n      r._field == \"S_PU4\" or r._field == \"S_PU5\" or r._field == \"S_PU6\" or\n      r._field == \"S_PU7\" or r._field == \"S_PU8\" or r._field == \"S_PU9\" or\n      r._field == \"S_V2\"\n  )\n  |> last()\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#6B7280", "value": null },
+              { "color": "green",   "value": 1 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byRegexp", "options": "^L_T" },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#DC2626", "value": null },
+                    { "color": "#1D4ED8", "value": 1.0 },
+                    { "color": "#3B82F6", "value": 3.0 },
+                    { "color": "#DC2626", "value": 6.3 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "inlineEditing": false,
+        "panZoom": false,
+        "root": {
+          "background": { "color": { "fixed": "#0F172A" } },
+          "border": { "color": { "fixed": "transparent" } },
+          "name": "root",
+          "placement": { "height": 100, "left": 0, "top": 0, "width": 100 },
+          "type": "frame",
+          "elements": [
+
+            { "name": "lbl-1", "type": "text",
+              "placement": { "left": 0, "top": 1, "width": 13, "height": 8 },
+              "config": { "align": "right", "color": { "fixed": "#475569" }, "text": { "fixed": "Nguồn" }, "valign": "middle", "fontSize": 10 },
+              "background": { "color": { "fixed": "transparent" } }, "border": { "color": { "fixed": "transparent" } }, "connections": [] },
+
+            { "name": "Source S1", "type": "rectangle",
+              "placement": { "left": 38, "top": 1, "width": 24, "height": 9 },
+              "config": { "align": "center", "color": { "fixed": "#F1F5F9" }, "text": { "fixed": "S1 — Nguồn" }, "valign": "middle", "fontSize": 13 },
+              "background": { "color": { "fixed": "#334155" } },
+              "border": { "color": { "fixed": "#94A3B8" }, "width": 2 },
+              "connections": [
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 0.28, "y": 1 }, "target": { "x": 0.5, "y": 0 }, "targetName": "Pump PU1" },
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 0.72, "y": 1 }, "target": { "x": 0.5, "y": 0 }, "targetName": "Pump PU2" }
+              ]
+            },
+
+            { "name": "lbl-2", "type": "text",
+              "placement": { "left": 0, "top": 14, "width": 13, "height": 8 },
+              "config": { "align": "right", "color": { "fixed": "#475569" }, "text": { "fixed": "Bơm\nchính" }, "valign": "middle", "fontSize": 10 },
+              "background": { "color": { "fixed": "transparent" } }, "border": { "color": { "fixed": "transparent" } }, "connections": [] },
+
+            { "name": "Pump PU1", "type": "ellipse",
+              "placement": { "left": 22, "top": 13, "width": 13, "height": 9 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "PU1" }, "valign": "middle", "fontSize": 12 },
+              "background": { "color": { "field": "S_PU1", "fixed": "#6B7280" } },
+              "border": { "color": { "fixed": "#CBD5E1" }, "width": 1 },
+              "connections": [
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 0.65, "y": 1 }, "target": { "x": 0.28, "y": 0 }, "targetName": "Tank T1" }
+              ]
+            },
+
+            { "name": "Pump PU2", "type": "ellipse",
+              "placement": { "left": 65, "top": 13, "width": 13, "height": 9 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "PU2" }, "valign": "middle", "fontSize": 12 },
+              "background": { "color": { "field": "S_PU2", "fixed": "#6B7280" } },
+              "border": { "color": { "fixed": "#CBD5E1" }, "width": 1 },
+              "connections": [
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 0.35, "y": 1 }, "target": { "x": 0.72, "y": 0 }, "targetName": "Tank T1" }
+              ]
+            },
+
+            { "name": "lbl-3", "type": "text",
+              "placement": { "left": 0, "top": 27, "width": 13, "height": 10 },
+              "config": { "align": "right", "color": { "fixed": "#475569" }, "text": { "fixed": "Bể T1" }, "valign": "middle", "fontSize": 10 },
+              "background": { "color": { "fixed": "transparent" } }, "border": { "color": { "fixed": "transparent" } }, "connections": [] },
+
+            { "name": "Tank T1", "type": "rectangle",
+              "placement": { "left": 36, "top": 26, "width": 28, "height": 12 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "T1 — Bể chính" }, "valign": "middle", "fontSize": 14 },
+              "background": { "color": { "field": "L_T1", "fixed": "#1D4ED8" } },
+              "border": { "color": { "fixed": "#93C5FD" }, "width": 3 },
+              "connections": [
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 0.25, "y": 1 }, "target": { "x": 0.5, "y": 0 }, "targetName": "Pump PU3" },
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 0.75, "y": 1 }, "target": { "x": 0.5, "y": 0 }, "targetName": "Valve V2" }
+              ]
+            },
+
+            { "name": "lbl-4", "type": "text",
+              "placement": { "left": 0, "top": 42, "width": 13, "height": 8 },
+              "config": { "align": "right", "color": { "fixed": "#475569" }, "text": { "fixed": "Bơm /\nVan" }, "valign": "middle", "fontSize": 10 },
+              "background": { "color": { "fixed": "transparent" } }, "border": { "color": { "fixed": "transparent" } }, "connections": [] },
+
+            { "name": "Pump PU3", "type": "ellipse",
+              "placement": { "left": 20, "top": 42, "width": 13, "height": 9 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "PU3" }, "valign": "middle", "fontSize": 12 },
+              "background": { "color": { "field": "S_PU3", "fixed": "#6B7280" } },
+              "border": { "color": { "fixed": "#CBD5E1" }, "width": 1 },
+              "connections": [
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 0.5, "y": 1 }, "target": { "x": 0.5, "y": 0 }, "targetName": "Tank T3" }
+              ]
+            },
+
+            { "name": "Valve V2", "type": "rectangle",
+              "placement": { "left": 67, "top": 42, "width": 13, "height": 9 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "V2" }, "valign": "middle", "fontSize": 12 },
+              "background": { "color": { "field": "S_V2", "fixed": "#6B7280" } },
+              "border": { "color": { "fixed": "#FCD34D" }, "width": 2 },
+              "connections": [
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 0.5, "y": 1 }, "target": { "x": 0.5, "y": 0 }, "targetName": "Tank T2" }
+              ]
+            },
+
+            { "name": "lbl-5", "type": "text",
+              "placement": { "left": 0, "top": 55, "width": 13, "height": 10 },
+              "config": { "align": "right", "color": { "fixed": "#475569" }, "text": { "fixed": "Bể\nT2/T3" }, "valign": "middle", "fontSize": 10 },
+              "background": { "color": { "fixed": "transparent" } }, "border": { "color": { "fixed": "transparent" } }, "connections": [] },
+
+            { "name": "Tank T3", "type": "rectangle",
+              "placement": { "left": 14, "top": 55, "width": 20, "height": 11 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "T3" }, "valign": "middle", "fontSize": 14 },
+              "background": { "color": { "field": "L_T3", "fixed": "#1D4ED8" } },
+              "border": { "color": { "fixed": "#93C5FD" }, "width": 2 },
+              "connections": [
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 0.3, "y": 1 }, "target": { "x": 0.5, "y": 0 }, "targetName": "Pump PU4" },
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 0.7, "y": 1 }, "target": { "x": 0.5, "y": 0 }, "targetName": "Pump PU5" }
+              ]
+            },
+
+            { "name": "Tank T2", "type": "rectangle",
+              "placement": { "left": 66, "top": 55, "width": 18, "height": 11 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "T2" }, "valign": "middle", "fontSize": 14 },
+              "background": { "color": { "field": "L_T2", "fixed": "#1D4ED8" } },
+              "border": { "color": { "fixed": "#93C5FD" }, "width": 2 },
+              "connections": [] },
+
+            { "name": "lbl-6", "type": "text",
+              "placement": { "left": 0, "top": 70, "width": 13, "height": 8 },
+              "config": { "align": "right", "color": { "fixed": "#475569" }, "text": { "fixed": "Bơm" }, "valign": "middle", "fontSize": 10 },
+              "background": { "color": { "fixed": "transparent" } }, "border": { "color": { "fixed": "transparent" } }, "connections": [] },
+
+            { "name": "Pump PU4", "type": "ellipse",
+              "placement": { "left": 16, "top": 70, "width": 12, "height": 9 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "PU4" }, "valign": "middle", "fontSize": 12 },
+              "background": { "color": { "field": "S_PU4", "fixed": "#6B7280" } },
+              "border": { "color": { "fixed": "#CBD5E1" }, "width": 1 },
+              "connections": [
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 0.5, "y": 1 }, "target": { "x": 0.5, "y": 0 }, "targetName": "Tank T4" }
+              ]
+            },
+
+            { "name": "Pump PU5", "type": "ellipse",
+              "placement": { "left": 32, "top": 70, "width": 12, "height": 9 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "PU5" }, "valign": "middle", "fontSize": 12 },
+              "background": { "color": { "field": "S_PU5", "fixed": "#6B7280" } },
+              "border": { "color": { "fixed": "#CBD5E1" }, "width": 1 },
+              "connections": [
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 0.5, "y": 1 }, "target": { "x": 0.5, "y": 0 }, "targetName": "J256 node" }
+              ]
+            },
+
+            { "name": "Pump PU6", "type": "ellipse",
+              "placement": { "left": 55, "top": 70, "width": 12, "height": 9 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "PU6" }, "valign": "middle", "fontSize": 12 },
+              "background": { "color": { "field": "S_PU6", "fixed": "#6B7280" } },
+              "border": { "color": { "fixed": "#CBD5E1" }, "width": 1 },
+              "connections": [
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 0.5, "y": 1 }, "target": { "x": 0.5, "y": 0 }, "targetName": "J415 node" }
+              ]
+            },
+
+            { "name": "lbl-7", "type": "text",
+              "placement": { "left": 0, "top": 83, "width": 13, "height": 12 },
+              "config": { "align": "right", "color": { "fixed": "#475569" }, "text": { "fixed": "Bể /\nNút áp" }, "valign": "middle", "fontSize": 10 },
+              "background": { "color": { "fixed": "transparent" } }, "border": { "color": { "fixed": "transparent" } }, "connections": [] },
+
+            { "name": "Tank T4", "type": "rectangle",
+              "placement": { "left": 14, "top": 83, "width": 16, "height": 12 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "T4" }, "valign": "middle", "fontSize": 14 },
+              "background": { "color": { "field": "L_T4", "fixed": "#1D4ED8" } },
+              "border": { "color": { "fixed": "#93C5FD" }, "width": 2 },
+              "connections": [
+                { "color": { "fixed": "#475569" }, "size": { "fixed": 2 }, "source": { "x": 1, "y": 0.5 }, "target": { "x": 0, "y": 0.5 }, "targetName": "Pump PU6" }
+              ]
+            },
+
+            { "name": "J256 node", "type": "rectangle",
+              "placement": { "left": 33, "top": 83, "width": 14, "height": 10 },
+              "config": { "align": "center", "color": { "fixed": "#94A3B8" }, "text": { "fixed": "J256\n◉ Áp" }, "valign": "middle", "fontSize": 10 },
+              "background": { "color": { "fixed": "#1E293B" } },
+              "border": { "color": { "fixed": "#475569" }, "width": 1 },
+              "connections": [] },
+
+            { "name": "J415 node", "type": "rectangle",
+              "placement": { "left": 52, "top": 83, "width": 14, "height": 10 },
+              "config": { "align": "center", "color": { "fixed": "#94A3B8" }, "text": { "fixed": "J415\n◉ Áp" }, "valign": "middle", "fontSize": 10 },
+              "background": { "color": { "fixed": "#1E293B" } },
+              "border": { "color": { "fixed": "#475569" }, "width": 1 },
+              "connections": [] },
+
+            { "name": "lbl-dist", "type": "text",
+              "placement": { "left": 72, "top": 55, "width": 26, "height": 6 },
+              "config": { "align": "center", "color": { "fixed": "#475569" }, "text": { "fixed": "Distribution Zone (T5 · T6 · T7)" }, "valign": "middle", "fontSize": 10 },
+              "background": { "color": { "fixed": "transparent" } }, "border": { "color": { "fixed": "transparent" } }, "connections": [] },
+
+            { "name": "Tank T5", "type": "rectangle",
+              "placement": { "left": 72, "top": 63, "width": 8, "height": 10 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "T5" }, "valign": "middle", "fontSize": 12 },
+              "background": { "color": { "field": "L_T5", "fixed": "#1D4ED8" } },
+              "border": { "color": { "fixed": "#93C5FD" }, "width": 1 },
+              "connections": [] },
+
+            { "name": "Tank T6", "type": "rectangle",
+              "placement": { "left": 82, "top": 63, "width": 8, "height": 10 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "T6" }, "valign": "middle", "fontSize": 12 },
+              "background": { "color": { "field": "L_T6", "fixed": "#1D4ED8" } },
+              "border": { "color": { "fixed": "#93C5FD" }, "width": 1 },
+              "connections": [] },
+
+            { "name": "Tank T7", "type": "rectangle",
+              "placement": { "left": 92, "top": 63, "width": 8, "height": 10 },
+              "config": { "align": "center", "color": { "fixed": "white" }, "text": { "fixed": "T7" }, "valign": "middle", "fontSize": 12 },
+              "background": { "color": { "field": "L_T7", "fixed": "#1D4ED8" } },
+              "border": { "color": { "fixed": "#93C5FD" }, "width": 1 },
+              "connections": [] }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": 2,
+      "title": "Mực nước bể (L_T1 – L_T7)",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 14, "x": 0, "y": 26 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-water" },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"water_bucket\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"water_telemetry\")\n  |> filter(fn: (r) =>\n      r._field == \"L_T1\" or r._field == \"L_T2\" or r._field == \"L_T3\" or\n      r._field == \"L_T4\" or r._field == \"L_T5\" or r._field == \"L_T6\" or r._field == \"L_T7\"\n  )\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+
+    {
+      "id": 3,
+      "title": "Alert Timeline (ATT_FLAG)",
+      "type": "state-timeline",
+      "gridPos": { "h": 9, "w": 10, "x": 14, "y": 26 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-water" },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"water_bucket\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"water_telemetry\")\n  |> filter(fn: (r) => r._field == \"ATT_FLAG\")\n  |> aggregateWindow(every: v.windowPeriod, fn: max, createEmpty: false)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 70 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red",   "value": 1 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "mergeValues": true,
+        "rowHeight": 0.9,
+        "showValue": "auto",
+        "tooltip": { "mode": "single" }
+      }
+    }
+  ]
+}

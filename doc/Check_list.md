@@ -32,6 +32,13 @@
 - [x] **3.3 Tích hợp Anomaly Detection:** Chạy Rule-based engine (dựa trên `CTOWN.INP`) hoặc mô hình ML để phát hiện sự cố rò rỉ/áp suất bất thường.
 - [x] **3.4 Ghi kết quả (Sink):** Ghi cờ cảnh báo (Alerts) và trạng thái bơm vào InfluxDB (Measurement: `water_telemetry`) thông qua `influxdb-client`.
 
+## Giai đoạn 3.5: ML Early Warning (Supervised Anomaly Detection)
+- [ ] **3.5.1 Train model offline:** Viết `spark_streaming/train_model.py` — load dataset03 + dataset04, feature engineering (diff, rolling mean, flow balance), train Random Forest, lưu model ra `anomaly_model.pkl`.
+- [ ] **3.5.2 Đánh giá model offline:** Tính Precision / Recall / F1-score trên tập test (dataset04), in classification report và confusion matrix.
+- [ ] **3.5.3 Tích hợp model vào Spark Streaming:** Cập nhật `stream_processor.py` — load `anomaly_model.pkl` qua Spark broadcast variable, gọi predict qua `pandas_udf` trên mỗi micro-batch.
+- [ ] **3.5.4 Cập nhật Docker image:** Thêm `scikit-learn` vào `spark_streaming/Dockerfile`, rebuild image `spark-master` và `spark-worker`.
+- [ ] **3.5.5 Kiểm tra kết quả inference:** Xác nhận InfluxDB nhận được trường `ml_alert` (0/1) cùng với `alert_type` rule-based — so sánh 2 nguồn cảnh báo.
+
 ## Giai đoạn 4: Trực quan hóa dữ liệu (Grafana Dashboard)
 - [ ] **4.1 Kết nối Data Source:** Thêm InfluxDB làm data source trong Grafana, cấu hình bucket `water_bucket` và token xác thực.
 - [ ] **4.2 Dashboard Trạng thái Mạng:** Tạo Line Chart panel theo dõi mực nước bể `L_T1`, áp suất và lưu lượng theo thời gian thực bằng Flux query.
