@@ -2,9 +2,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Cài thư viện trước (tận dụng Docker layer cache)
+# Upgrade pip trước để tránh hash verification bug trên pip < 25
+# sau đó cài thư viện (tận dụng Docker layer cache)
 COPY producer/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip --quiet && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy code producer
 COPY producer/ ./producer/

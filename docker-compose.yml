@@ -20,6 +20,12 @@ services:
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
     ports:
       - "9092:9092"
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   influxdb:
     image: influxdb:2
@@ -73,13 +79,12 @@ services:
       - "8090:8090"
     volumes:
       - ./spark_streaming:/opt/spark-apps
-      - spark_checkpoint:/tmp/spark-checkpoint
 
   spark-worker:
     build:
       context: .
       dockerfile: spark_streaming/Dockerfile
-    container_name: spark-worker
+    container_name: spark-worker-1
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     depends_on:
       - spark-master
@@ -89,15 +94,58 @@ services:
     volumes:
       - ./spark_streaming:/opt/spark-apps
 
+  spark-worker-2:
+    build:
+      context: .
+      dockerfile: spark_streaming/Dockerfile
+    container_name: spark-worker-2
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_WORKER_MEMORY=2g
+      - SPARK_WORKER_CORES=2
+    volumes:
+      - ./spark_streaming:/opt/spark-apps
+
+  spark-driver:
+    build:
+      context: .
+      dockerfile: spark_streaming/Dockerfile
+    container_name: spark-driver
+    depends_on:
+      spark-master:
+        condition: service_started
+      spark-worker:
+        condition: service_started
+      spark-worker-2:
+        condition: service_started
+    environment:
+      - KAFKA_BROKER=18.138.224.73:9092
+      - KAFKA_TOPIC=water_stream
+      - INFLUX_URL=http://18.138.224.73:8086
+      - INFLUX_TOKEN=my-super-secret-token
+      - INFLUX_ORG=bigdata
+      - INFLUX_BUCKET=water_bucket
+    command: >
+      /opt/spark/bin/spark-submit
+      --master spark://spark-master:7077
+      --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.8
+      --conf spark.jars.ivy=/tmp/.ivy2
+      /opt/spark-apps/stream_processor.py
+    volumes:
+      - ./spark_streaming:/opt/spark-apps
+      - spark_checkpoint:/tmp/spark-checkpoint
+      - ivy_cache:/tmp/.ivy2
+    restart: on-failure
+
   generator:
     build:
       context: .
       dockerfile: producer/Dockerfile
     container_name: generator
-    depends_on:
-      - kafka
     environment:
-      KAFKA_BROKER: kafka:29092
+      KAFKA_BROKER: 18.138.224.73:9092
       KAFKA_TOPIC: water_stream
       COMPRESSION_FACTOR: "180000"
     restart: on-failure
@@ -107,3 +155,4 @@ volumes:
   influxdb_data:
   grafana_data:
   spark_checkpoint:
+  ivy_cache:

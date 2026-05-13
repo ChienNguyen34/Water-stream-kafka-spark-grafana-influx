@@ -82,15 +82,37 @@ df_clean = df_parsed.filter(col("L_T1").isNotNull())
 df_flagged = df_clean.withColumn(
     "alert_type",
     when(
-        # PU1 đang ON nhưng T1 > 6.3 (đáng lẽ phải tắt)
         (col("S_PU1") == 1) & (col("L_T1") > 6.3), lit("PU1_STUCK_ON")
     ).when(
-        # PU1 đang OFF nhưng T1 < 4.0 (đáng lẽ phải bật)
         (col("S_PU1") == 0) & (col("L_T1") < 4.0), lit("PU1_STUCK_OFF")
+    ).when(
+        (col("S_PU2") == 1) & (col("L_T1") > 6.3), lit("PU2_STUCK_ON")
+    ).when(
+        (col("S_PU3") == 1) & (col("L_T3") > 4.5), lit("PU3_STUCK_ON")
+    ).when(
+        (col("S_PU3") == 0) & (col("L_T3") < 1.0), lit("PU3_STUCK_OFF")
     ).otherwise(lit("NORMAL"))
     # ATT_FLAG được giữ lại như field riêng trong InfluxDB để đánh giá sau,
     # KHÔNG dùng làm điều kiện detection — tránh data leakage.
 )
+
+# disp_PUx: 0=OFF(xám), 1=ON(xanh), 2=ALERT(đỏ)
+# Dùng cho Canvas color binding vì canvas không bind được string field
+df_flagged = df_flagged \
+    .withColumn("disp_PU1",
+        when((col("S_PU1") == 1) & (col("L_T1") > 6.3), lit(2))
+        .when((col("S_PU1") == 0) & (col("L_T1") < 4.0), lit(2))
+        .otherwise(col("S_PU1").cast("integer"))
+    ) \
+    .withColumn("disp_PU2",
+        when((col("S_PU2") == 1) & (col("L_T1") > 6.3), lit(2))
+        .otherwise(col("S_PU2").cast("integer"))
+    ) \
+    .withColumn("disp_PU3",
+        when((col("S_PU3") == 1) & (col("L_T3") > 4.5), lit(2))
+        .when((col("S_PU3") == 0) & (col("L_T3") < 1.0), lit(2))
+        .otherwise(col("S_PU3").cast("integer"))
+    )
 
 query = df_flagged.writeStream \
     .foreachBatch(write_to_influx) \

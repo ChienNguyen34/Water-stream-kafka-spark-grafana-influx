@@ -40,16 +40,16 @@
 - [ ] **3.5.5 Kiểm tra kết quả inference:** Xác nhận InfluxDB nhận được trường `ml_alert` (0/1) cùng với `alert_type` rule-based — so sánh 2 nguồn cảnh báo.
 
 ## Giai đoạn 4: Trực quan hóa dữ liệu (Grafana Dashboard)
-- [ ] **4.1 Kết nối Data Source:** Thêm InfluxDB làm data source trong Grafana, cấu hình bucket `water_bucket` và token xác thực.
-- [ ] **4.2 Dashboard Trạng thái Mạng:** Tạo Line Chart panel theo dõi mực nước bể `L_T1`, áp suất và lưu lượng theo thời gian thực bằng Flux query.
-- [ ] **4.3 Dashboard Cảnh báo Sự cố:** Vẽ biểu đồ cảnh báo (đỏ/xanh) và timeline sự kiện bất thường, cấu hình Alert Rule trong Grafana khi phát hiện anomaly.
+- [x] **4.1 Kết nối Data Source:** Thêm InfluxDB làm data source trong Grafana, cấu hình bucket `water_bucket` và token xác thực.
+- [x] **4.2 Dashboard Trạng thái Mạng:** Tạo Line Chart panel theo dõi mực nước bể `L_T1`, áp suất và lưu lượng theo thời gian thực bằng Flux query.
+- [x] **4.3 Dashboard Cảnh báo Sự cố:** Vẽ biểu đồ cảnh báo (đỏ/xanh) và timeline sự kiện bất thường, cấu hình Alert Rule trong Grafana khi phát hiện anomaly.
 
 ## Giai đoạn 5: Kiểm thử & Nghiệm thu [DE-107, DE-108]
-- [ ] **5.1 Unit Test - Null handling [DE-107]:** Script Python chạy không bị crash khi gặp dòng dữ liệu rỗng (Null values).
-- [ ] **5.2 Container Inspection [DE-107]:** Review Dockerfile và `docker-compose.yml` — không dùng tag `:latest` (trừ image tự build), không có lỗ hổng bảo mật nghiêm trọng.
-- [ ] **5.3 Integration Test [DE-108]:** Chạy `docker-compose up -d` → toàn bộ containers (Kafka, Spark, Generator, InfluxDB, Grafana) trạng thái "Healthy", cùng 1 Docker Network.
-- [ ] **5.4 E2E Test - Data Flow [DE-108]:** Dữ liệu chảy xuyên suốt: Python → Kafka → Spark Structured Streaming → InfluxDB.
-- [ ] **5.5 E2E Test - Grafana [DE-108]:** Biểu đồ Line Chart `L_T1` trên Grafana UI cập nhật nhấp nháy theo thời gian thực.
+- [x] **5.1 Unit Test + Coverage [DE-107]:** Chạy `pytest tst/ -v --cov=producer --cov=spark_streaming --cov-report=term-missing --cov-fail-under=80` — toàn bộ test pass, coverage ≥ 80%, không có crash khi gặp Null values.
+- [x] **5.2 Container Security Scan [DE-107]:** Dùng **Trivy** scan CVE từng Docker image trong `docker-compose.yml` — không có lỗ hổng mức **CRITICAL**; không dùng tag `:latest` (trừ image tự build); kết quả scan được lưu vào `tst/trivy_report.txt`.
+- [x] **5.3 Integration Test - Automated [DE-108]:** Chạy script `tst/test_integration.py` — tự động verify: tất cả containers Up/Healthy, cùng 1 Docker network, các port 9092/8086/3000 reachable từ host; script exit code 0 = pass.
+- [x] **5.4 E2E Test - Data Flow Automated [DE-108]:** Chạy script `tst/test_e2e_dataflow.py` — query InfluxDB REST API, assert có ít nhất 1 record trong measurement `water_telemetry` trong 60 giây qua; script exit code 0 = data pipeline đang chảy.
+- [ ] **5.5 E2E Test - Grafana API [DE-108]:** Chạy script `tst/test_e2e_grafana.py` — gọi Grafana HTTP API (`/api/dashboards/uid/batadal-water`), assert dashboard tồn tại và có đủ 3 panels; script exit code 0 = pass.
 
 ## Giai đoạn 6: Triển khai Đám mây (Cloud Deployment)
 - [ ] **6.1 Khởi tạo Cloud:** Tạo tài khoản và cấp phát máy ảo (VM) trên AWS (EC2) hoặc GCP (Compute Engine).

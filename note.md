@@ -1,3 +1,12 @@
+docker exec spark-master /opt/spark/bin/spark-submit `
+  --master spark://spark-master:7077 `
+  --conf spark.jars.ivy=/tmp/.ivy2 `
+  --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.8 `
+  /opt/spark-apps/stream_processor.py
+
+# 1. Xóa checkpoint cũ
+docker exec -u root spark-master bash -c "rm -rf /tmp/spark-checkpoint/* && chmod 777 /tmp/spark-checkpoint"
+
 {
   "title": "BATADAL Water Network",
   "uid": "batadal-water",
@@ -25,7 +34,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"water_bucket\")\n  |> range(start: -2m)\n  |> filter(fn: (r) => r._measurement == \"water_telemetry\")\n  |> filter(fn: (r) =>\n      r._field == \"L_T1\" or r._field == \"L_T2\" or r._field == \"L_T3\" or\n      r._field == \"L_T4\" or r._field == \"L_T5\" or r._field == \"L_T6\" or\n      r._field == \"L_T7\" or\n      r._field == \"S_PU1\" or r._field == \"S_PU2\" or r._field == \"S_PU3\" or\n      r._field == \"S_PU4\" or r._field == \"S_PU5\" or r._field == \"S_PU6\" or\n      r._field == \"S_PU7\" or r._field == \"S_PU8\" or r._field == \"S_PU9\" or\n      r._field == \"S_PU10\" or r._field == \"S_PU11\" or\n      r._field == \"S_V2\" or\n      r._field == \"disp_PU1\" or r._field == \"disp_PU2\" or r._field == \"disp_PU3\"\n  )\n  |> last()\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")"
+          "query": "from(bucket: \"water_bucket\")\n  |> range(start: -2m)\n  |> filter(fn: (r) => r._measurement == \"water_telemetry\")\n  |> filter(fn: (r) =>\n      r._field == \"L_T1\" or r._field == \"L_T2\" or r._field == \"L_T3\" or\n      r._field == \"L_T4\" or r._field == \"L_T5\" or r._field == \"L_T6\" or\n      r._field == \"L_T7\" or\n      r._field == \"S_PU1\" or r._field == \"S_PU2\" or r._field == \"S_PU3\" or\n      r._field == \"S_PU4\" or r._field == \"S_PU5\" or r._field == \"S_PU6\" or\n      r._field == \"S_PU7\" or r._field == \"S_PU8\" or r._field == \"S_PU9\" or\n      r._field == \"S_V2\" or\n      r._field == \"disp_PU1\" or r._field == \"disp_PU2\" or r._field == \"disp_PU3\"\n  )\n  |> last()\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")"
         }
       ],
       "fieldConfig": {
@@ -100,9 +109,7 @@
       },
       "options": {
         "inlineEditing": true,
-        "showAdvancedTypes": true,
         "panZoom": false,
-        "zoomToContent": false,
         "root": {
           "background": {
             "color": {
@@ -154,72 +161,6 @@
                 "width": 100
               },
               "type": "text"
-            },
-            {
-              "background": {
-                "color": {
-                  "fixed": "#1E3A5F"
-                }
-              },
-              "border": {
-                "color": {
-                  "fixed": "#60A5FA"
-                },
-                "width": 2
-              },
-              "config": {
-                "align": "center",
-                "color": {
-                  "fixed": "#BFDBFE"
-                },
-                "fontSize": 13,
-                "text": {
-                  "fixed": "R1\nNguồn"
-                },
-                "valign": "middle"
-              },
-              "connections": [
-                {
-                  "color": {
-                    "fixed": "rgb(204, 204, 220)"
-                  },
-                  "path": "straight",
-                  "size": {
-                    "fixed": 2,
-                    "max": 10,
-                    "min": 1
-                  },
-                  "source": {
-                    "x": 1,
-                    "y": 0
-                  },
-                  "sourceOriginal": {
-                    "x": 350,
-                    "y": 63
-                  },
-                  "target": {
-                    "x": -1,
-                    "y": 0
-                  },
-                  "targetName": "Source S1",
-                  "targetOriginal": {
-                    "x": 410,
-                    "y": 63
-                  }
-                }
-              ],
-              "constraint": {
-                "horizontal": "left",
-                "vertical": "top"
-              },
-              "name": "Reservoir R1",
-              "placement": {
-                "height": 77,
-                "left": 227,
-                "top": 25,
-                "width": 109
-              },
-              "type": "rectangle"
             },
             {
               "background": {
@@ -309,7 +250,7 @@
               "name": "Source S1",
               "placement": {
                 "height": 87,
-                "left": 416,
+                "left": 410,
                 "top": 20,
                 "width": 270
               },
@@ -713,8 +654,8 @@
               "name": "Pump PU3",
               "placement": {
                 "height": 55,
-                "left": 297,
-                "top": 457,
+                "left": 215,
+                "top": 455,
                 "width": 130
               },
               "type": "ellipse"
@@ -911,8 +852,8 @@
               "name": "Tank T3",
               "placement": {
                 "height": 65,
-                "left": 262,
-                "top": 569,
+                "left": 180,
+                "top": 575,
                 "width": 200
               },
               "type": "rectangle"
@@ -1015,7 +956,36 @@
                 },
                 "valign": "middle"
               },
-              "connections": [],
+              "connections": [
+                {
+                  "color": {
+                    "fixed": "rgb(204, 204, 220)"
+                  },
+                  "path": "straight",
+                  "size": {
+                    "fixed": 2,
+                    "max": 10,
+                    "min": 1
+                  },
+                  "source": {
+                    "x": 0,
+                    "y": -1
+                  },
+                  "sourceOriginal": {
+                    "x": 205,
+                    "y": 760
+                  },
+                  "target": {
+                    "x": -0.02666666666666667,
+                    "y": 0.8461538461538461
+                  },
+                  "targetName": "Tank T4",
+                  "targetOriginal": {
+                    "x": 218,
+                    "y": 840
+                  }
+                }
+              ],
               "constraint": {
                 "horizontal": "left",
                 "vertical": "top"
@@ -1023,8 +993,8 @@
               "name": "Pump PU4",
               "placement": {
                 "height": 55,
-                "left": 297,
-                "top": 699,
+                "left": 145,
+                "top": 705,
                 "width": 120
               },
               "type": "ellipse"
@@ -1090,7 +1060,7 @@
               "name": "Pump PU5",
               "placement": {
                 "height": 55,
-                "left": 485,
+                "left": 329,
                 "top": 703,
                 "width": 120
               },
@@ -1157,75 +1127,8 @@
               "name": "Pump PU6",
               "placement": {
                 "height": 55,
-                "left": 647,
+                "left": 599,
                 "top": 703,
-                "width": 120
-              },
-              "type": "ellipse"
-            },
-            {
-              "background": {
-                "color": {
-                  "field": "S_PU7",
-                  "fixed": "#6B7280"
-                }
-              },
-              "border": {
-                "color": {
-                  "fixed": "#CBD5E1"
-                },
-                "width": 1
-              },
-              "config": {
-                "align": "center",
-                "color": {
-                  "fixed": "white"
-                },
-                "fontSize": 13,
-                "text": {
-                  "fixed": "PU7"
-                },
-                "valign": "middle"
-              },
-              "connections": [
-                {
-                  "color": {
-                    "fixed": "rgb(204, 204, 220)"
-                  },
-                  "path": "straight",
-                  "size": {
-                    "fixed": 2,
-                    "max": 10,
-                    "min": 1
-                  },
-                  "source": {
-                    "x": 0,
-                    "y": -1
-                  },
-                  "sourceOriginal": {
-                    "x": 208,
-                    "y": 754
-                  },
-                  "target": {
-                    "x": -0.013333333333333334,
-                    "y": 0.6923076923076923
-                  },
-                  "targetName": "Tank T4",
-                  "targetOriginal": {
-                    "x": 214,
-                    "y": 840
-                  }
-                }
-              ],
-              "constraint": {
-                "horizontal": "left",
-                "vertical": "top"
-              },
-              "name": "Pump PU7",
-              "placement": {
-                "height": 55,
-                "left": 155,
-                "top": 699,
                 "width": 120
               },
               "type": "ellipse"
@@ -1290,7 +1193,36 @@
                 },
                 "valign": "middle"
               },
-              "connections": [],
+              "connections": [
+                {
+                  "color": {
+                    "fixed": "rgb(204, 204, 220)"
+                  },
+                  "path": "straight",
+                  "size": {
+                    "fixed": 2,
+                    "max": 10,
+                    "min": 1
+                  },
+                  "source": {
+                    "x": 1,
+                    "y": 1
+                  },
+                  "sourceOriginal": {
+                    "x": 290,
+                    "y": 830
+                  },
+                  "target": {
+                    "x": -0.8666666666666667,
+                    "y": -0.6363636363636364
+                  },
+                  "targetName": "Pump PU6",
+                  "targetOriginal": {
+                    "x": 607,
+                    "y": 748
+                  }
+                }
+              ],
               "constraint": {
                 "horizontal": "left",
                 "vertical": "top"
@@ -1335,7 +1267,7 @@
               "name": "J256 node",
               "placement": {
                 "height": 65,
-                "left": 476,
+                "left": 362,
                 "top": 835,
                 "width": 150
               },
@@ -1372,7 +1304,7 @@
               "name": "J415 node",
               "placement": {
                 "height": 65,
-                "left": 632,
+                "left": 599,
                 "top": 835,
                 "width": 150
               },
@@ -1408,8 +1340,8 @@
               "name": "lbl-dist",
               "placement": {
                 "height": 35,
-                "left": 961,
-                "top": 913,
+                "left": 860,
+                "top": 653,
                 "width": 290
               },
               "type": "text"
@@ -1446,8 +1378,8 @@
               "name": "Tank T5",
               "placement": {
                 "height": 90,
-                "left": 917,
-                "top": 810,
+                "left": 860,
+                "top": 688,
                 "width": 88
               },
               "type": "rectangle"
@@ -1484,8 +1416,8 @@
               "name": "Tank T6",
               "placement": {
                 "height": 90,
-                "left": 1064,
-                "top": 810,
+                "left": 967,
+                "top": 688,
                 "width": 88
               },
               "type": "rectangle"
@@ -1522,459 +1454,8 @@
               "name": "Tank T7",
               "placement": {
                 "height": 90,
-                "left": 1210,
-                "top": 810,
-                "width": 88
-              },
-              "type": "rectangle"
-            },
-            {
-              "background": {
-                "color": {
-                  "fixed": "transparent"
-                }
-              },
-              "border": {
-                "color": {
-                  "fixed": "transparent"
-                }
-              },
-              "config": {
-                "align": "center",
-                "color": {
-                  "fixed": "#475569"
-                },
-                "fontSize": 10,
-                "text": {
-                  "fixed": "Bơm phân phối"
-                },
-                "valign": "middle"
-              },
-              "connections": [],
-              "constraint": {
-                "horizontal": "left",
-                "vertical": "top"
-              },
-              "name": "lbl-dist-pump",
-              "placement": {
-                "height": 20,
-                "left": 1204,
-                "top": 661,
-                "width": 188
-              },
-              "type": "text"
-            },
-            {
-              "background": {
-                "color": {
-                  "field": "S_PU8",
-                  "fixed": "#6B7280"
-                }
-              },
-              "border": {
-                "color": {
-                  "fixed": "#CBD5E1"
-                },
-                "width": 1
-              },
-              "config": {
-                "align": "center",
-                "color": {
-                  "fixed": "white"
-                },
-                "fontSize": 13,
-                "text": {
-                  "fixed": "PU8"
-                },
-                "valign": "middle"
-              },
-              "connections": [
-                {
-                  "color": {
-                    "fixed": "rgb(204, 204, 220)"
-                  },
-                  "path": "straight",
-                  "size": {
-                    "fixed": 2,
-                    "max": 10,
-                    "min": 1
-                  },
-                  "source": {
-                    "x": 0,
-                    "y": -1
-                  },
-                  "sourceOriginal": {
-                    "x": 961,
-                    "y": 754
-                  },
-                  "target": {
-                    "x": 0.045454545454545456,
-                    "y": 0.7555555555555555
-                  },
-                  "targetName": "Tank T5",
-                  "targetOriginal": {
-                    "x": 963,
-                    "y": 821
-                  }
-                }
-              ],
-              "constraint": {
-                "horizontal": "left",
-                "vertical": "top"
-              },
-              "name": "Pump PU8",
-              "placement": {
-                "height": 55,
-                "left": 917,
-                "top": 699,
-                "width": 88
-              },
-              "type": "ellipse"
-            },
-            {
-              "background": {
-                "color": {
-                  "field": "S_PU9",
-                  "fixed": "#6B7280"
-                }
-              },
-              "border": {
-                "color": {
-                  "fixed": "#CBD5E1"
-                },
-                "width": 1
-              },
-              "config": {
-                "align": "center",
-                "color": {
-                  "fixed": "white"
-                },
-                "fontSize": 13,
-                "text": {
-                  "fixed": "PU9"
-                },
-                "valign": "middle"
-              },
-              "connections": [
-                {
-                  "color": {
-                    "fixed": "rgb(204, 204, 220)"
-                  },
-                  "path": "straight",
-                  "size": {
-                    "fixed": 2,
-                    "max": 10,
-                    "min": 1
-                  },
-                  "source": {
-                    "x": 0,
-                    "y": -1
-                  },
-                  "sourceOriginal": {
-                    "x": 1106,
-                    "y": 754
-                  },
-                  "target": {
-                    "x": 0,
-                    "y": 0.6222222222222222
-                  },
-                  "targetName": "Tank T6",
-                  "targetOriginal": {
-                    "x": 1108,
-                    "y": 827
-                  }
-                }
-              ],
-              "constraint": {
-                "horizontal": "left",
-                "vertical": "top"
-              },
-              "name": "Pump PU9",
-              "placement": {
-                "height": 55,
-                "left": 1064,
-                "top": 699,
-                "width": 88
-              },
-              "type": "ellipse"
-            },
-            {
-              "background": {
-                "color": {
-                  "field": "S_PU10",
-                  "fixed": "#6B7280"
-                }
-              },
-              "border": {
-                "color": {
-                  "fixed": "#CBD5E1"
-                },
-                "width": 1
-              },
-              "config": {
-                "align": "center",
-                "color": {
-                  "fixed": "white"
-                },
-                "fontSize": 13,
-                "text": {
-                  "fixed": "PU10"
-                },
-                "valign": "middle"
-              },
-              "connections": [
-                {
-                  "color": {
-                    "fixed": "rgb(204, 204, 220)"
-                  },
-                  "path": "straight",
-                  "size": {
-                    "fixed": 2,
-                    "max": 10,
-                    "min": 1
-                  },
-                  "source": {
-                    "x": 0,
-                    "y": -1
-                  },
-                  "sourceOriginal": {
-                    "x": 1254,
-                    "y": 754
-                  },
-                  "target": {
-                    "x": 0.022727272727272728,
-                    "y": 0.7777777777777778
-                  },
-                  "targetName": "Tank T7",
-                  "targetOriginal": {
-                    "x": 1256,
-                    "y": 820
-                  }
-                }
-              ],
-              "constraint": {
-                "horizontal": "left",
-                "vertical": "top"
-              },
-              "name": "Pump PU10",
-              "placement": {
-                "height": 55,
-                "left": 1210,
-                "top": 699,
-                "width": 88
-              },
-              "type": "ellipse"
-            },
-            {
-              "background": {
-                "color": {
-                  "field": "S_PU11",
-                  "fixed": "#6B7280"
-                }
-              },
-              "border": {
-                "color": {
-                  "fixed": "#CBD5E1"
-                },
-                "width": 1
-              },
-              "config": {
-                "align": "center",
-                "color": {
-                  "fixed": "white"
-                },
-                "fontSize": 13,
-                "text": {
-                  "fixed": "PU11"
-                },
-                "valign": "middle"
-              },
-              "connections": [
-                {
-                  "color": {
-                    "fixed": "rgb(204, 204, 220)"
-                  },
-                  "path": "straight",
-                  "size": {
-                    "fixed": 2,
-                    "max": 10,
-                    "min": 1
-                  },
-                  "source": {
-                    "x": 0,
-                    "y": -1
-                  },
-                  "sourceOriginal": {
-                    "x": 1402,
-                    "y": 754
-                  },
-                  "target": {
-                    "x": 0.8409090909090909,
-                    "y": -0.28888888888888886
-                  },
-                  "targetName": "Tank T7",
-                  "targetOriginal": {
-                    "x": 1292,
-                    "y": 868
-                  }
-                }
-              ],
-              "constraint": {
-                "horizontal": "left",
-                "vertical": "top"
-              },
-              "name": "Pump PU11",
-              "placement": {
-                "height": 55,
-                "left": 1358,
-                "top": 699,
-                "width": 88
-              },
-              "type": "ellipse"
-            },
-            {
-              "background": {
-                "color": {
-                  "fixed": "transparent"
-                }
-              },
-              "border": {
-                "color": {
-                  "fixed": "transparent"
-                }
-              },
-              "config": {
-                "align": "center",
-                "color": {
-                  "fixed": "#475569"
-                },
-                "fontSize": 10,
-                "text": {
-                  "fixed": "Van PRV"
-                },
-                "valign": "middle"
-              },
-              "connections": [],
-              "constraint": {
-                "horizontal": "left",
-                "vertical": "top"
-              },
-              "name": "lbl-prv",
-              "placement": {
-                "height": 20,
-                "left": 1210,
-                "top": 5,
-                "width": 188
-              },
-              "type": "text"
-            },
-            {
-              "background": {
-                "color": {
-                  "fixed": "#3B1F06"
-                }
-              },
-              "border": {
-                "color": {
-                  "fixed": "#F59E0B"
-                },
-                "width": 2
-              },
-              "config": {
-                "align": "center",
-                "color": {
-                  "fixed": "white"
-                },
-                "fontSize": 11,
-                "text": {
-                  "fixed": "v1\nPRV"
-                },
-                "valign": "middle"
-              },
-              "connections": [],
-              "constraint": {
-                "horizontal": "left",
-                "vertical": "top"
-              },
-              "name": "Valve v1",
-              "placement": {
-                "height": 50,
-                "left": 1210,
-                "top": 30,
-                "width": 88
-              },
-              "type": "rectangle"
-            },
-            {
-              "background": {
-                "color": {
-                  "fixed": "#3B1F06"
-                }
-              },
-              "border": {
-                "color": {
-                  "fixed": "#F59E0B"
-                },
-                "width": 2
-              },
-              "config": {
-                "align": "center",
-                "color": {
-                  "fixed": "white"
-                },
-                "fontSize": 11,
-                "text": {
-                  "fixed": "V45\nPRV"
-                },
-                "valign": "middle"
-              },
-              "connections": [],
-              "constraint": {
-                "horizontal": "left",
-                "vertical": "top"
-              },
-              "name": "Valve V45",
-              "placement": {
-                "height": 50,
-                "left": 1310,
-                "top": 30,
-                "width": 88
-              },
-              "type": "rectangle"
-            },
-            {
-              "background": {
-                "color": {
-                  "fixed": "#3B1F06"
-                }
-              },
-              "border": {
-                "color": {
-                  "fixed": "#F59E0B"
-                },
-                "width": 2
-              },
-              "config": {
-                "align": "center",
-                "color": {
-                  "fixed": "white"
-                },
-                "fontSize": 11,
-                "text": {
-                  "fixed": "V47\nPRV"
-                },
-                "valign": "middle"
-              },
-              "connections": [],
-              "constraint": {
-                "horizontal": "left",
-                "vertical": "top"
-              },
-              "name": "Valve V47",
-              "placement": {
-                "height": 50,
-                "left": 1210,
-                "top": 90,
+                "left": 1074,
+                "top": 688,
                 "width": 88
               },
               "type": "rectangle"
@@ -1982,10 +1463,10 @@
           ],
           "name": "root",
           "placement": {
-            "height": 950,
+            "height": 900,
             "left": 0,
             "top": 0,
-            "width": 1420
+            "width": 1200
           },
           "type": "frame"
         },

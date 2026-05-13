@@ -1,0 +1,1 @@
+﻿from(bucket: "water_bucket") |> range(start: -10m) |> filter(fn: (r) => r._measurement == "water_telemetry") |> filter(fn: (r) => r._field == "S_PU4" or r._field == "S_PU5" or r._field == "ATT_FLAG") |> group(columns: ["_field"]) |> sum()
