@@ -191,6 +191,8 @@ Invoke-RestMethod "http://18.138.224.73:3000/api/health"
 
 # Kiểm tra Kafka listener có IP đúng không
 ssh -i "d:\Workspace\Bigdata\batadal-key_new.pem" -o StrictHostKeyChecking=no ubuntu@18.138.224.73 "docker logs kafka 2>&1 | grep -i 'advertised'"
+#compose up
+ssh -i "d:\Workspace\Bigdata\batadal-key_new.pem" -o StrictHostKeyChecking=no ubuntu@18.138.224.73 "cd ~/batadal && EC2_PUBLIC_IP=18.138.224.73 docker compose up -d kafka grafana 2>&1"
 ```
 
 ---
@@ -204,6 +206,34 @@ ssh -i "d:\Workspace\Bigdata\batadal-key_new.pem" -o StrictHostKeyChecking=no ub
 | Port 3000/8086 không reach được | ISP block outbound port lạ | Dùng SSH tunnel `-L 3000:localhost:3000` |
 | Docker install fail: `&&` error | PowerShell parse `&&` như PS syntax | Dùng `& ssh @SSH_ARGS` array thay vì `Invoke-Expression` |
 | `docker: command not found` | Docker chưa cài trên EC2 | Script `deploy_cloud.ps1` tự cài qua apt |
+| Kafka `Exited (137)` + Grafana `Exited (1)` sau vài giờ | t3.micro chỉ 1 GB RAM, không có swap → Linux OOM killer kill Kafka; Grafana SQLite bị corrupt do bị kill đột ngột | Thêm 1 GB swap (xem bên dưới) + xóa volume Grafana để recreate |
+
+### Thêm Swap trên EC2 (fix OOM kill)
+
+**Swap là gì:** Vùng không gian trên EBS disk được dùng làm RAM ảo. Khi RAM đầy, Linux chuyển bớt dữ liệu ít dùng ra swap thay vì kill process. Chậm hơn RAM nhưng giữ container không bị OOM kill.
+
+**Chi phí:** t3.micro có 8 GB EBS mặc định (~$0.08/GB/tháng). 1 GB swap tốn thêm ~$0.08/tháng — không đáng kể.
+
+```bash
+# SSH vào EC2 rồi chạy:
+sudo fallocate -l 1G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab  # persist sau reboot
+
+# Kiểm tra
+free -m
+```
+
+**Fix Grafana SQLite bị locked (sau khi bị OOM kill):**
+
+```bash
+cd ~/batadal
+docker rm grafana
+docker volume rm batadal_grafana_data
+EC2_PUBLIC_IP=18.138.224.73 docker compose up -d grafana
+```
 
 ---
 

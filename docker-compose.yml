@@ -89,7 +89,7 @@ services:
     depends_on:
       - spark-master
     environment:
-      - SPARK_WORKER_MEMORY=2g
+      - SPARK_WORKER_MEMORY=3g
       - SPARK_WORKER_CORES=2
     volumes:
       - ./spark_streaming:/opt/spark-apps
@@ -103,7 +103,7 @@ services:
     depends_on:
       - spark-master
     environment:
-      - SPARK_WORKER_MEMORY=2g
+      - SPARK_WORKER_MEMORY=3g
       - SPARK_WORKER_CORES=2
     volumes:
       - ./spark_streaming:/opt/spark-apps
@@ -121,18 +121,30 @@ services:
       spark-worker-2:
         condition: service_started
     environment:
-      - KAFKA_BROKER=18.138.224.73:9092
+      # Kafka_broker on cloud
+      # - KAFKA_BROKER=18.138.224.73:9092
+      # Kafka_broker local
+      - KAFKA_BROKER=kafka:29092
       - KAFKA_TOPIC=water_stream
-      - INFLUX_URL=http://18.138.224.73:8086
+      # influx on cloud
+      # - INFLUX_URL=http://18.138.224.73:8086
+      # influx local
+      - INFLUX_URL=http://influxdb:8086
       - INFLUX_TOKEN=my-super-secret-token
       - INFLUX_ORG=bigdata
       - INFLUX_BUCKET=water_bucket
     command: >
+      sh -c "
+      find /tmp/spark-checkpoint -mindepth 1 -delete &&
       /opt/spark/bin/spark-submit
       --master spark://spark-master:7077
       --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.8
       --conf spark.jars.ivy=/tmp/.ivy2
+      --executor-memory 1536m
+      --driver-memory 1g
+      --conf spark.executor.memoryOverhead=256m
       /opt/spark-apps/stream_processor.py
+      "
     volumes:
       - ./spark_streaming:/opt/spark-apps
       - spark_checkpoint:/tmp/spark-checkpoint
@@ -145,7 +157,10 @@ services:
       dockerfile: producer/Dockerfile
     container_name: generator
     environment:
-      KAFKA_BROKER: 18.138.224.73:9092
+      # Kafka_broker on cloud
+      # KAFKA_BROKER: 18.138.224.73:9092
+      # Kafka_broker local
+      KAFKA_BROKER: kafka:29092
       KAFKA_TOPIC: water_stream
       COMPRESSION_FACTOR: "180000"
     restart: on-failure

@@ -28,7 +28,11 @@ _INT_FIELDS = [
     "S_PU1","S_PU2","S_PU3","S_PU4","S_PU5","S_PU6",
     "S_PU7","S_PU8","S_PU9","S_PU10","S_PU11","S_V2",
     "ATT_FLAG",
-    "disp_PU1","disp_PU2","disp_PU3",
+    "disp_PU1","disp_PU2","disp_V2",
+    "disp_PU4","disp_PU5",
+    "disp_PU6","disp_PU7",
+    "disp_PU8",
+    "disp_PU10","disp_PU11",
 ]
 
 def write_to_influx(df_batch, batch_id):

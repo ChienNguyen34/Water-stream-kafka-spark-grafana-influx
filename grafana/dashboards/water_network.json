@@ -48,7 +48,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "^disp_PU"
+              "options": "^disp_"
             },
             "properties": [
               {
@@ -65,36 +65,67 @@
             ]
           },
           {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "^L_T"
-            },
-            "properties": [
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "#DC2626",
-                      "value": 0
-                    },
-                    {
-                      "color": "#1D4ED8",
-                      "value": 1
-                    },
-                    {
-                      "color": "#3B82F6",
-                      "value": 3
-                    },
-                    {
-                      "color": "#DC2626",
-                      "value": 6.3
-                    }
-                  ]
-                }
-              }
-            ]
+            "matcher": { "id": "byName", "options": "L_T1" },
+            "properties": [{ "id": "thresholds", "value": { "mode": "absolute", "steps": [
+              { "color": "#DC2626", "value": 0   },
+              { "color": "#1D4ED8", "value": 1.0 },
+              { "color": "#3B82F6", "value": 4.0 },
+              { "color": "#DC2626", "value": 6.3 }
+            ]}}]
+          },
+          {
+            "matcher": { "id": "byName", "options": "L_T2" },
+            "properties": [{ "id": "thresholds", "value": { "mode": "absolute", "steps": [
+              { "color": "#DC2626", "value": 0   },
+              { "color": "#1D4ED8", "value": 0.5 },
+              { "color": "#3B82F6", "value": 2.5 },
+              { "color": "#DC2626", "value": 5.5 }
+            ]}}]
+          },
+          {
+            "matcher": { "id": "byName", "options": "L_T3" },
+            "properties": [{ "id": "thresholds", "value": { "mode": "absolute", "steps": [
+              { "color": "#DC2626", "value": 0   },
+              { "color": "#1D4ED8", "value": 1.0 },
+              { "color": "#3B82F6", "value": 3.0 },
+              { "color": "#DC2626", "value": 5.3 }
+            ]}}]
+          },
+          {
+            "matcher": { "id": "byName", "options": "L_T4" },
+            "properties": [{ "id": "thresholds", "value": { "mode": "absolute", "steps": [
+              { "color": "#DC2626", "value": 0   },
+              { "color": "#1D4ED8", "value": 2.0 },
+              { "color": "#3B82F6", "value": 3.0 },
+              { "color": "#DC2626", "value": 4.5 }
+            ]}}]
+          },
+          {
+            "matcher": { "id": "byName", "options": "L_T5" },
+            "properties": [{ "id": "thresholds", "value": { "mode": "absolute", "steps": [
+              { "color": "#DC2626", "value": 0   },
+              { "color": "#1D4ED8", "value": 1.5 },
+              { "color": "#3B82F6", "value": 2.5 },
+              { "color": "#DC2626", "value": 4.0 }
+            ]}}]
+          },
+          {
+            "matcher": { "id": "byName", "options": "L_T6" },
+            "properties": [{ "id": "thresholds", "value": { "mode": "absolute", "steps": [
+              { "color": "#DC2626", "value": 0   },
+              { "color": "#1D4ED8", "value": 0.5 },
+              { "color": "#3B82F6", "value": 3.0 },
+              { "color": "#DC2626", "value": 5.2 }
+            ]}}]
+          },
+          {
+            "matcher": { "id": "byName", "options": "L_T7" },
+            "properties": [{ "id": "thresholds", "value": { "mode": "absolute", "steps": [
+              { "color": "#DC2626", "value": 0   },
+              { "color": "#1D4ED8", "value": 1.0 },
+              { "color": "#3B82F6", "value": 2.5 },
+              { "color": "#DC2626", "value": 4.8 }
+            ]}}]
           }
         ]
       },
@@ -655,7 +686,7 @@
             {
               "background": {
                 "color": {
-                  "field": "disp_PU3",
+                  "field": "S_PU3",
                   "fixed": "#6B7280"
                 }
               },
@@ -722,7 +753,7 @@
             {
               "background": {
                 "color": {
-                  "field": "S_V2",
+                  "field": "disp_V2",
                   "fixed": "#6B7280"
                 }
               },
@@ -994,7 +1025,7 @@
             {
               "background": {
                 "color": {
-                  "field": "S_PU4",
+                  "field": "disp_PU4",
                   "fixed": "#6B7280"
                 }
               },
@@ -1032,7 +1063,7 @@
             {
               "background": {
                 "color": {
-                  "field": "S_PU5",
+                  "field": "disp_PU5",
                   "fixed": "#6B7280"
                 }
               },
@@ -1099,7 +1130,7 @@
             {
               "background": {
                 "color": {
-                  "field": "S_PU6",
+                  "field": "disp_PU6",
                   "fixed": "#6B7280"
                 }
               },
@@ -1166,7 +1197,7 @@
             {
               "background": {
                 "color": {
-                  "field": "S_PU7",
+                  "field": "disp_PU7",
                   "fixed": "#6B7280"
                 }
               },
@@ -1567,7 +1598,7 @@
             {
               "background": {
                 "color": {
-                  "field": "S_PU8",
+                  "field": "disp_PU8",
                   "fixed": "#6B7280"
                 }
               },
@@ -1701,7 +1732,7 @@
             {
               "background": {
                 "color": {
-                  "field": "S_PU10",
+                  "field": "disp_PU10",
                   "fixed": "#6B7280"
                 }
               },
@@ -1768,7 +1799,7 @@
             {
               "background": {
                 "color": {
-                  "field": "S_PU11",
+                  "field": "disp_PU11",
                   "fixed": "#6B7280"
                 }
               },
