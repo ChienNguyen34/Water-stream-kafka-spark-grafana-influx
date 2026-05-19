@@ -3,30 +3,584 @@
 % ============================================================
 \section{Cơ sở lý thuyết}
 
+% ------------------------------------------------------------
 \subsection{Kiến trúc Kappa}
 
-\FILL{Nội dung}
+Kiến trúc Kappa được Jay Kreps đề xuất vào năm 2014 \cite{kreps2014kappa} như một
+giải pháp thay thế đơn giản hơn cho kiến trúc Lambda. Trong khi Lambda Architecture
+duy trì song song hai lớp xử lý --- Batch Layer (xử lý toàn bộ dữ liệu lịch sử
+theo lô) và Speed Layer (xử lý dữ liệu mới nhất theo thời gian thực) --- kiến trúc
+Kappa loại bỏ hoàn toàn Batch Layer và chỉ giữ lại một Speed Layer duy nhất dựa
+trên hệ thống streaming.
 
+\subsubsection{Nguyên lý hoạt động}
+
+Kiến trúc Kappa xây dựng trên hai tiền đề cốt lõi. \textbf{Thứ nhất}, hệ thống
+streaming hiện đại (điển hình là Apache Kafka) có khả năng lưu trữ toàn bộ dữ liệu
+sự kiện lâu dài dưới dạng \emph{immutable log} --- nhật ký bất biến, có thể được
+``replay'' (đọc lại từ đầu) bất cứ khi nào cần. \textbf{Thứ hai}, nếu một hệ thống
+streaming có thể xử lý dữ liệu lịch sử cũng nhanh như dữ liệu mới phát sinh, thì
+không cần thiết phải có một Batch Layer tách biệt.
+
+Pipeline trong kiến trúc Kappa có cấu trúc tuyến tính:
+
+\begin{figure}[H]
+  \centering
+  \setlength{\fboxsep}{12pt}
+  \fbox{\begin{minipage}{0.88\textwidth}\centering\vspace{1.8cm}
+    \FILL{Chèn hình tại đây}\\[0.6em]
+    \textit{Gợi ý: Sơ đồ so sánh hai kiến trúc ---
+    bên trái là Lambda Architecture (Batch Layer + Speed Layer + Serving Layer)
+    và bên phải là Kappa Architecture (chỉ Speed Layer duy nhất). Dùng mũi tên
+    và màu sắc để làm nổi bật sự đơn giản hóa của Kappa.
+    Nguồn tham khảo: \url{https://www.oreilly.com/radar/questioning-the-lambda-architecture/}}
+    \vspace{1.8cm}\end{minipage}}
+  \caption{So sánh kiến trúc Lambda và kiến trúc Kappa}
+  \label{fig:kappa-lambda}
+\end{figure}
+
+\begin{enumerate}[label=\arabic*.]
+  \item \textbf{Nguồn dữ liệu (Data Sources):} Các thiết bị IoT, ứng dụng, cơ sở
+    dữ liệu liên tục ghi sự kiện vào distributed log.
+  \item \textbf{Distributed Log (Apache Kafka):} Đóng vai trò trung tâm lưu trữ
+    và phân phối luồng sự kiện. Dữ liệu được giữ lại theo cấu hình
+    \texttt{retention.ms}, cho phép consumer đọc lại lịch sử bằng cách reset
+    offset về 0.
+  \item \textbf{Speed Layer (Apache Spark Structured Streaming):} Tiêu thụ dữ liệu
+    từ Kafka, áp dụng toàn bộ logic xử lý và tính toán kết quả, ghi kết quả vào
+    Serving Layer.
+  \item \textbf{Serving Layer (InfluxDB + Grafana):} Lưu trữ kết quả đã xử lý và
+    phục vụ truy vấn từ người dùng hoặc dashboard.
+\end{enumerate}
+
+\subsubsection{Ưu điểm so với kiến trúc Lambda}
+
+\begin{itemize}
+  \item \textbf{Đơn giản hóa codebase:} Chỉ cần duy trì một luồng xử lý duy nhất,
+    không còn tình trạng logic trùng lặp giữa Batch Layer và Speed Layer.
+  \item \textbf{Dễ bảo trì:} Khi cần cập nhật thuật toán hoặc sửa lỗi, chỉ cần
+    cập nhật một chỗ rồi replay lại dữ liệu từ Kafka.
+  \item \textbf{Phù hợp cho dữ liệu IoT:} Dữ liệu cảm biến phát sinh theo thời
+    gian thực với tần suất đều đặn, không cần xử lý lại theo lô hàng ngày.
+\end{itemize}
+
+Đề tài áp dụng kiến trúc Kappa cho pipeline BATADAL: Kafka đóng vai trò distributed
+log lưu trữ dữ liệu cảm biến từ 43 điểm đo, Spark Structured Streaming thực hiện
+toàn bộ tiền xử lý và phát hiện bất thường, InfluxDB lưu kết quả và Grafana hiển
+thị dashboard thời gian thực.
+
+\begin{figure}[H]
+  \centering
+  \setlength{\fboxsep}{12pt}
+  \fbox{\begin{minipage}{0.88\textwidth}\centering\vspace{1.8cm}
+    \FILL{Chèn hình tại đây}\\[0.6em]
+    \textit{Gợi ý: Sơ đồ kiến trúc Kappa áp dụng cụ thể trong đề tài.
+    Luồng từ trái sang phải: IoT Simulator (Python Producer) $\rightarrow$
+    Apache Kafka (topic water\_stream) $\rightarrow$
+    Spark Structured Streaming (rule-based + ML inference) $\rightarrow$
+    InfluxDB (water\_telemetry) $\rightarrow$ Grafana Dashboard.
+    Thêm mũi tên ``replay'' vòng từ Kafka về Spark để thể hiện
+    tính năng xử lý lại lịch sử của kiến trúc Kappa.}
+    \vspace{1.8cm}\end{minipage}}
+  \caption{Kiến trúc Kappa áp dụng trong pipeline BATADAL của đề tài}
+  \label{fig:kappa-pipeline}
+\end{figure}
+
+% ------------------------------------------------------------
 \subsection{Apache Kafka}
 
-\FILL{Nội dung}
+Apache Kafka là một \emph{event streaming platform} phân tán, mã nguồn mở, được
+phát triển bởi LinkedIn và chuyển giao cho Apache Software Foundation
+\cite{kreps2011kafka}. Theo tài liệu chính thức tại \url{https://kafka.apache.org/intro},
+Kafka kết hợp ba khả năng cốt lõi: (1) \emph{publish} và \emph{subscribe} luồng
+sự kiện; (2) lưu trữ luồng sự kiện bền vững và đáng tin cậy trong thời gian dài;
+và (3) xử lý luồng sự kiện theo thời gian thực hoặc hồi tố.
 
+\subsubsection{Kiến trúc Kafka}
+
+Kafka hoạt động như một hệ thống phân tán gồm \textbf{Servers} và \textbf{Clients}:
+
+\begin{itemize}
+  \item \textbf{Broker:} Kafka được vận hành như một cluster gồm một hoặc nhiều
+    server (broker). Các broker chịu trách nhiệm nhận, lưu trữ và phục vụ dữ liệu
+    sự kiện. Khi một broker gặp sự cố, các broker còn lại tự động tiếp quản để
+    đảm bảo hoạt động liên tục không mất dữ liệu.
+  \item \textbf{Producer:} Ứng dụng client ghi (publish) sự kiện vào Kafka topic.
+    Producer quyết định partition nào sẽ nhận sự kiện, thường dựa trên event key.
+  \item \textbf{Consumer:} Ứng dụng client đọc (subscribe) và xử lý sự kiện từ
+    Kafka topic. Consumer theo dõi vị trí đọc bằng \emph{offset}, cho phép đọc
+    lại từ bất kỳ điểm nào trong lịch sử.
+\end{itemize}
+
+\subsubsection{Khái niệm cốt lõi}
+
+\begin{figure}[H]
+  \centering
+  \setlength{\fboxsep}{12pt}
+  \fbox{\begin{minipage}{0.88\textwidth}\centering\vspace{1.8cm}
+    \FILL{Chèn hình tại đây}\\[0.6em]
+    \textit{Gợi ý: Sơ đồ kiến trúc tổng thể Apache Kafka thể hiện:
+    (1) nhiều Producer ghi vào các Topic khác nhau;
+    (2) Kafka Cluster gồm 3 Broker với các Partition và Replica;
+    (3) nhiều Consumer Group độc lập đọc từ cùng một Topic;
+    (4) ZooKeeper/KRaft quản lý metadata cluster.
+    Hình tham khảo: \url{https://kafka.apache.org/intro} (phần ``How does Kafka work'').}
+    \vspace{1.8cm}\end{minipage}}
+  \caption{Kiến trúc tổng thể Apache Kafka: Broker, Producer và Consumer}
+  \label{fig:kafka-arch}
+\end{figure}
+
+\textbf{Event} (sự kiện) là đơn vị dữ liệu cơ bản trong Kafka, gồm: event key,
+event value, timestamp, và metadata headers tùy chọn.
+
+\textbf{Topic} là nơi lưu trữ và tổ chức các sự kiện, tương tự như một thư mục
+trong hệ thống file. Topic trong Kafka hỗ trợ nhiều producer ghi đồng thời và
+nhiều consumer đọc độc lập. Khác với hệ thống message queue truyền thống, sự kiện
+trong Kafka \emph{không bị xóa sau khi đọc} --- thời gian lưu trữ được cấu hình
+qua \texttt{retention.ms}.
+
+\textbf{Partition} là cơ chế phân mảnh dữ liệu: mỗi topic được chia thành nhiều
+partition phân bố trên các broker khác nhau. Partition đảm bảo thứ tự sự kiện trong
+phạm vi từng partition và cho phép đọc/ghi song song từ nhiều client. Sự kiện có
+cùng key được ghi vào cùng một partition, đảm bảo thứ tự xử lý theo key.
+
+\textbf{Replication factor} xác định số lượng bản sao dữ liệu duy trì trên các
+broker khác nhau. Thiết lập phổ biến trong môi trường production là replication
+factor = 3, đảm bảo tính sẵn sẵn sàng cao (high availability).
+
+\begin{figure}[H]
+  \centering
+  \setlength{\fboxsep}{12pt}
+  \fbox{\begin{minipage}{0.88\textwidth}\centering\vspace{1.8cm}
+    \FILL{Chèn hình tại đây}\\[0.6em]
+    \textit{Gợi ý: Sơ đồ chi tiết cấu trúc Topic -- Partition -- Offset trong Kafka.
+    Vẽ một topic có 4 partition (P0, P1, P2, P3), mỗi partition là một
+    danh sách sự kiện được đánh offset (0, 1, 2, \ldots).
+    Hiển thị hai consumer thuộc hai consumer group khác nhau cùng đọc
+    topic này với offset độc lập.
+    Hình tham khảo: \url{https://kafka.apache.org/intro} (hình minh họa streams-and-tables-p1\_p4).}
+    \vspace{1.8cm}\end{minipage}}
+  \caption{Cấu trúc Topic, Partition và Offset trong Apache Kafka}
+  \label{fig:kafka-topic}
+\end{figure}
+
+\subsubsection{KRaft Mode}
+
+Từ phiên bản Kafka 3.3 trở lên, Kafka hỗ trợ chế độ KRaft (Kafka Raft) --- loại
+bỏ hoàn toàn sự phụ thuộc vào Apache ZooKeeper để quản lý metadata và bầu leader.
+Trong chế độ KRaft, Kafka tự quản lý cluster metadata thông qua giao thức đồng thuận
+Raft nội bộ, giảm độ phức tạp vận hành và cải thiện thời gian khởi động cluster.
+Đề tài này sử dụng Kafka phiên bản 8.1.2 (Confluent Platform) với KRaft mode, không
+cần triển khai ZooKeeper riêng biệt.
+
+% ------------------------------------------------------------
 \subsection{Apache Spark Structured Streaming}
 
-\FILL{Nội dung}
+Apache Spark là một \emph{unified analytics engine} cho Big Data, hỗ trợ xử lý
+cả batch và streaming trên cùng một nền tảng \cite{zaharia2016spark}. Spark
+Structured Streaming, được giới thiệu trong Spark 2.0, là mô hình xử lý luồng dữ
+liệu có khả năng chịu lỗi, xây dựng trên Spark SQL engine.
 
+\subsubsection{Mô hình lập trình}
+
+Theo tài liệu chính thức của Apache Spark
+(\url{https://spark.apache.org/docs/latest/streaming/}), Structured Streaming cung
+cấp mô hình lập trình \emph{``incremental query on unbounded table''}: luồng dữ liệu
+vào được mô hình hóa như một bảng vô hạn (unbounded table) liên tục được bổ sung
+thêm dòng mới. Người dùng viết truy vấn trên bảng này giống hệt như viết truy vấn
+batch trên DataFrame/Dataset tĩnh --- Spark engine tự động chuyển đổi thành xử lý
+streaming gia tăng (incremental processing).
+
+\begin{figure}[H]
+  \centering
+  \setlength{\fboxsep}{12pt}
+  \fbox{\begin{minipage}{0.88\textwidth}\centering\vspace{1.8cm}
+    \FILL{Chèn hình tại đây}\\[0.6em]
+    \textit{Gợi ý: Sơ đồ mô hình ``Unbounded Table'' của Spark Structured Streaming.
+    Bên trái: luồng dữ liệu đến (input data stream) theo trục thời gian.
+    Ở giữa: bảng vô hạn (unbounded table) liên tục thêm hàng mới.
+    Bên phải: result table (bảng kết quả) được cập nhật sau mỗi trigger.
+    Ở dưới: output sink (InfluxDB). Hình tham khảo:
+    \url{https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html}
+    (phần ``Programming Model'').}
+    \vspace{1.8cm}\end{minipage}}
+  \caption{Mô hình Unbounded Table trong Spark Structured Streaming}
+  \label{fig:spark-unbounded}
+\end{figure}
+
+\subsubsection{Micro-Batch Execution}
+
+Chế độ mặc định của Structured Streaming là \emph{micro-batch execution}: engine
+thu thập dữ liệu mới trong một khoảng thời gian (trigger interval), sau đó xử lý
+toàn bộ micro-batch đó như một job Spark thông thường. Trigger interval có thể được
+cấu hình linh hoạt:
+
+\begin{itemize}
+  \item \texttt{ProcessingTime}: xử lý theo chu kỳ cố định (ví dụ: mỗi 5 giây).
+  \item \texttt{Once}: xử lý tất cả dữ liệu hiện có rồi dừng (phù hợp cho
+    scheduled job).
+  \item \texttt{Continuous}: chế độ thực nghiệm với độ trễ thấp ở mức
+    mili-giây (row-at-a-time processing).
+\end{itemize}
+
+\subsubsection{Tích hợp Kafka}
+
+\begin{figure}[H]
+  \centering
+  \setlength{\fboxsep}{12pt}
+  \fbox{\begin{minipage}{0.88\textwidth}\centering\vspace{1.8cm}
+    \FILL{Chèn hình tại đây}\\[0.6em]
+    \textit{Gợi ý: Sơ đồ timeline minh họa cơ chế Micro-Batch Execution.
+    Trục ngang là thời gian; đánh dấu các trigger interval đều nhau (ví dụ: 5s).
+    Mỗi khoảng trigger là một micro-batch (tô màu khác nhau).
+    Bên dưới mỗi micro-batch hiển thị: số record nhận được, thời gian xử lý.
+    So sánh với mô hình Continuous Processing (row-at-a-time) phía dưới
+    để làm nổi bật sự khác biệt.}
+    \vspace{1.8cm}\end{minipage}}
+  \caption{Cơ chế Micro-Batch Execution trong Spark Structured Streaming}
+  \label{fig:spark-microbatch}
+\end{figure}
+
+Spark Structured Streaming tích hợp Kafka qua thư viện
+\texttt{spark-sql-kafka-0-10}. Mỗi message Kafka được ánh xạ thành một row trong
+DataFrame với các cột: \texttt{key}, \texttt{value}, \texttt{topic},
+\texttt{partition}, \texttt{offset}, \texttt{timestamp}. Trường \texttt{value}
+chứa payload dạng bytes, cần được deserialize (thường là JSON) trước khi xử lý.
+
+\subsubsection{Pandas UDF và Broadcast Variable}
+
+Để tích hợp mô hình scikit-learn vào Spark, đề tài sử dụng hai cơ chế:
+\textbf{Broadcast variable} truyền mô hình đã huấn luyện đến mọi executor một lần
+duy nhất, tránh gửi lại mô hình cho mỗi task. \textbf{Pandas UDF}
+(\texttt{pandas\_udf}) cho phép áp dụng hàm Python thuần nhận và trả về
+\texttt{pandas.Series} trực tiếp trên từng cột của DataFrame, khai thác Apache
+Arrow để truyền dữ liệu hiệu quả giữa JVM và Python process.
+
+% ------------------------------------------------------------
 \subsection{InfluxDB}
 
-\FILL{Nội dung}
+InfluxDB là một \emph{time-series database} (TSDB) mã nguồn mở, được phát triển
+bởi InfluxData và tối ưu cho việc ghi, lưu trữ và truy vấn dữ liệu có kèm timestamp
+với tần suất cao. Đây là lựa chọn phổ biến cho các ứng dụng IoT, monitoring hệ
+thống, và observability. Phiên bản InfluxDB 2.x được sử dụng trong đề tài.
 
+\subsubsection{Mô hình dữ liệu}
+
+Theo tài liệu chính thức tại
+\url{https://docs.influxdata.com/influxdb/v2/reference/key-concepts/data-elements/},
+InfluxDB 2.x tổ chức dữ liệu theo hệ thống phân cấp:
+
+\begin{itemize}
+  \item \textbf{Organization:} Đơn vị quản lý cấp cao nhất, nhóm các tài nguyên
+    liên quan (bucket, dashboard, task, user).
+  \item \textbf{Bucket:} Nơi lưu trữ dữ liệu time-series, tương đương với
+    database trong các hệ RDBMS. Mỗi bucket có \emph{retention policy} quy định
+    thời gian lưu dữ liệu trước khi tự động xóa.
+  \item \textbf{Measurement:} Nhóm logic cho dữ liệu time-series, tương đương với
+    table. Trong đề tài, measurement \texttt{water\_telemetry} chứa toàn bộ dữ liệu
+    cảm biến.
+  \item \textbf{Tags:} Cặp key-value lưu metadata, có giá trị thay đổi không
+    thường xuyên (ví dụ: \texttt{sensor\_id}, \texttt{location}). Tags được lập
+    chỉ mục (indexed) nên phù hợp cho lọc và nhóm dữ liệu.
+  \item \textbf{Fields:} Cặp key-value lưu giá trị đo lường thực tế, thay đổi
+    theo thời gian (ví dụ: mức nước, lưu lượng, áp suất). Fields không được lập
+    chỉ mục.
+  \item \textbf{Timestamp:} Mốc thời gian liên kết với mỗi điểm dữ liệu, độ chính
+    xác nano-giây.
+\end{itemize}
+
+Mỗi \textbf{Point} (điểm dữ liệu) được xác định duy nhất bởi tổ hợp:
+measurement + tag set + field key + timestamp. Tập hợp các điểm có cùng
+measurement, tag keys và tag values tạo thành một \textbf{Series}.
+
+\begin{figure}[H]
+  \centering
+  \setlength{\fboxsep}{12pt}
+  \fbox{\begin{minipage}{0.88\textwidth}\centering\vspace{1.8cm}
+    \FILL{Chèn hình tại đây}\\[0.6em]
+    \textit{Gợi ý: Sơ đồ cây phân cấp mô hình dữ liệu InfluxDB 2.x.
+    Từ trên xuống: Organization $\rightarrow$ Bucket (water\_bucket, retention) $\rightarrow$
+    Measurement (water\_telemetry) $\rightarrow$
+    Tags (sensor\_id, location) và Fields (L\_T1, F\_PU1, \ldots) và Timestamp.
+    Ở dưới cùng vẽ một bảng ví dụ vài dòng dữ liệu thực từ water\_telemetry
+    để minh họa cụ thể. Nguồn tham khảo:
+    \url{https://docs.influxdata.com/influxdb/v2/reference/key-concepts/data-elements/}.}
+    \vspace{1.8cm}\end{minipage}}
+  \caption{Mô hình dữ liệu phân cấp của InfluxDB 2.x}
+  \label{fig:influxdb-model}
+\end{figure}
+
+\subsubsection{Ngôn ngữ truy vấn Flux}
+
+Flux là ngôn ngữ truy vấn và scripting chức năng (functional) được InfluxData phát
+triển riêng cho InfluxDB 2.x. Flux sử dụng cú pháp \emph{pipeline} với toán tử
+\texttt{|>} (pipe-forward), cho phép xây dựng chuỗi biến đổi dữ liệu một cách rõ
+ràng:
+
+\begin{lstlisting}[language=Python, caption={Ví dụ truy vấn Flux lấy dữ liệu mức nước trong 1 giờ qua}]
+from(bucket: "water_bucket")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "water_telemetry")
+  |> filter(fn: (r) => r._field == "L_T1")
+  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)
+\end{lstlisting}
+
+\subsubsection{Giao thức ghi dữ liệu}
+
+InfluxDB sử dụng \emph{Line Protocol} --- định dạng văn bản thuần để ghi dữ liệu
+qua HTTP API tại endpoint \texttt{/api/v2/write}. Mỗi dòng có cú pháp:
+
+\begin{lstlisting}[caption={Cú pháp Line Protocol của InfluxDB}]
+<measurement>[,<tag_key>=<tag_value>] <field_key>=<field_value> [<timestamp>]
+\end{lstlisting}
+
+Trong đề tài, thư viện \texttt{influxdb-client-python} được sử dụng để ghi dữ liệu
+từ Spark Streaming vào InfluxDB thông qua \texttt{WriteApi} với chế độ
+\texttt{SYNCHRONOUS}.
+
+% ------------------------------------------------------------
 \subsection{Grafana}
 
-\FILL{Nội dung}
+Grafana là một nền tảng trực quan hóa và quan sát (observability platform) mã nguồn
+mở, phát triển bởi Grafana Labs. Theo tài liệu chính thức tại
+\url{https://grafana.com/docs/grafana/latest/introduction/}, Grafana cho phép truy
+vấn, trực quan hóa, cảnh báo và khám phá dữ liệu từ nhiều nguồn khác nhau thông
+qua giao diện web thống nhất.
 
+\subsubsection{Thành phần chính}
+
+\textbf{Data Source:} Grafana hỗ trợ hàng chục loại nguồn dữ liệu, bao gồm
+InfluxDB, Prometheus, Elasticsearch, PostgreSQL, MySQL và nhiều loại khác. Mỗi
+data source được cấu hình với URL, thông tin xác thực và các tùy chọn kết nối
+riêng.
+
+\textbf{Panel:} Đơn vị trực quan hóa cơ bản trong Grafana. Mỗi panel thực hiện
+truy vấn đến data source và hiển thị kết quả dưới nhiều dạng: time-series graph,
+gauge, stat, bar chart, table, heatmap, và các dạng khác.
+
+\textbf{Dashboard:} Tập hợp các panel được sắp xếp trên một canvas. Dashboard hỗ
+trợ \emph{template variables} cho phép lọc dữ liệu động mà không cần chỉnh sửa
+từng truy vấn.
+
+\textbf{Alerting:} Grafana tích hợp cơ chế cảnh báo cho phép định nghĩa điều kiện
+kích hoạt (alert rule) dựa trên giá trị dữ liệu. Khi điều kiện được thỏa mãn,
+Grafana gửi thông báo qua email, Slack, PagerDuty hoặc webhook.
+
+\begin{figure}[H]
+  \centering
+  \setlength{\fboxsep}{12pt}
+  \fbox{\begin{minipage}{0.88\textwidth}\centering\vspace{1.8cm}
+    \FILL{Chèn hình tại đây}\\[0.6em]
+    \textit{Gợi ý: Chụp màn hình (screenshot) Grafana dashboard ``BATADAL Water Network''
+    đang chạy thực tế (truy cập \texttt{http://localhost:3000}).
+    Dashboard nên hiển thị: panel mức nước các bể $L_{T1}\ldots L_{T7}$ dạng
+    time-series graph; panel trạng thái bơm dạng stat/gauge;
+    panel cảnh báo rule-based và ML alert dạng table hoặc bar.
+    Đây là minh chứng trực tiếp cho khả năng trực quan hóa thời gian thực
+    của Grafana kết hợp InfluxDB.}
+    \vspace{1.8cm}\end{minipage}}
+  \caption{Giao diện Grafana dashboard giám sát mạng nước BATADAL theo thời gian thực}
+  \label{fig:grafana-dashboard}
+\end{figure}
+
+\subsubsection{Grafana Provisioning}
+
+Theo tài liệu chính thức tại
+\url{https://grafana.com/docs/grafana/latest/administration/provisioning/},
+Grafana Provisioning là cơ chế cấu hình tự động qua file YAML, cho phép:
+
+\begin{itemize}
+  \item \textbf{Datasource Provisioning:} Định nghĩa data source trong file
+    \texttt{datasources/*.yaml}, Grafana tự động tạo và cấu hình khi khởi động.
+  \item \textbf{Dashboard Provisioning:} Định nghĩa thư mục chứa file JSON
+    dashboard trong \texttt{dashboards/*.yaml}, Grafana tự động import tất cả
+    dashboard JSON tìm thấy.
+\end{itemize}
+
+Cơ chế này cho phép \emph{version control} toàn bộ cấu hình Grafana cùng với
+source code, đảm bảo tính tái lập (reproducibility) khi triển khai hệ thống. Trong
+đề tài, cấu hình datasource (InfluxDB) và dashboard (BATADAL water network) được
+provisioning tự động thông qua Docker Compose volume mount.
+
+% ------------------------------------------------------------
 \subsection{Bộ dữ liệu BATADAL}
 
-\FILL{Nội dung}
+BATADAL (Battle of the Attack Detection ALgorithms) là bộ dữ liệu benchmark chuẩn
+được xây dựng bởi Taormina và cộng sự \cite{taormina2018batadal} nhằm đánh giá và
+so sánh các thuật toán phát hiện tấn công mạng vật lý (cyber-physical attack) trên
+hệ thống mạng cấp nước (WDN).
 
+\subsubsection{Mạng C-TOWN}
+
+Dữ liệu BATADAL được tạo ra từ mô phỏng hệ thống C-TOWN --- một mạng nước đô thị
+tổng hợp có quy mô vừa, được mô tả chi tiết trong file \texttt{CTOWN.INP} (định dạng
+EPANET). C-TOWN gồm các thành phần:
+
+\begin{itemize}
+  \item 7 khu vực phân phối nước (district metered areas)
+  \item 10 bể chứa nước ($T_1$ đến $T_{10}$, trừ $T_6$, $T_9$, $T_{10}$)
+  \item 11 trạm bơm ($PU_1$ đến $PU_{11}$)
+  \item 2 van điều tiết ($V_1$, $V_2$)
+  \item Hàng nghìn nút tiêu thụ (demand nodes)
+\end{itemize}
+
+\subsubsection{Cấu trúc dữ liệu}
+
+\begin{figure}[H]
+  \centering
+  \setlength{\fboxsep}{12pt}
+  \fbox{\begin{minipage}{0.88\textwidth}\centering\vspace{1.8cm}
+    \FILL{Chèn hình tại đây}\\[0.6em]
+    \textit{Gợi ý: Sơ đồ topology mạng nước C-TOWN được vẽ từ file
+    \texttt{CTOWN.INP} (dùng EPANET hoặc WNTR để xuất hình).
+    Thể hiện: 7 khu vực phân phối (tô màu khác nhau), vị trí các bể chứa
+    $T_1$--$T_7$ (hình trụ), các trạm bơm $PU_1$--$PU_{11}$ (hình tam giác),
+    các van $V_1$, $V_2$ (hình thoi), và đường ống nối giữa các nút.
+    Chú thích tên từng thành phần trực tiếp trên sơ đồ.}
+    \vspace{1.8cm}\end{minipage}}
+  \caption{Topology mạng nước C-TOWN --- nền tảng dữ liệu BATADAL}
+  \label{fig:ctown-network}
+\end{figure}
+
+Bộ dữ liệu BATADAL ghi lại trạng thái hệ thống C-TOWN theo chu kỳ 1 giờ, với
+43 đặc trưng (features) gồm ba nhóm:
+
+\begin{itemize}
+  \item $L_{Ti}$: mức nước bể chứa (tank level), đơn vị mét --- 7 giá trị.
+  \item $F_{PUj}$ và $S_{PUj}$: lưu lượng (flow) và trạng thái bật/tắt (status)
+    của từng máy bơm --- mỗi loại 11 giá trị.
+  \item $F_{V1}$, $S_{V2}$: lưu lượng qua van $V_1$ và trạng thái van $V_2$.
+  \item Timestamp theo định dạng \texttt{DD/MM/YY HH}.
+  \item \texttt{ATT\_FLAG}: nhãn tấn công ($0$ = bình thường, $1$ = tấn công,
+    $-999$ = chưa gán nhãn).
+\end{itemize}
+
+\subsubsection{Các tập dữ liệu}
+
+\begin{itemize}
+  \item \textbf{Dataset 1} (training set): 8\,761 bản ghi từ 01/01/2016 đến
+    31/12/2016 (\texttt{ATT\_FLAG} = 0 toàn bộ --- không có tấn công). Dùng
+    để học mô hình trạng thái bình thường.
+  \item \textbf{Dataset 2} (test set with labels): 4\,393 bản ghi với nhãn
+    tấn công đầy đủ (\texttt{ATT\_FLAG} $\in \{0,1\}$). Dùng để đánh giá mô hình
+    phát hiện bất thường.
+  \item \textbf{Dataset 3} (test set without labels): tương tự Dataset 2 nhưng
+    \texttt{ATT\_FLAG} = $-999$ (dữ liệu mù). Trong đề tài, Dataset 3
+    (\texttt{BATADAL\_dataset04.csv}) được sử dụng để giả lập luồng dữ liệu
+    streaming real-time.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \setlength{\fboxsep}{12pt}
+  \fbox{\begin{minipage}{0.88\textwidth}\centering\vspace{1.8cm}
+    \FILL{Chèn hình tại đây}\\[0.6em]
+    \textit{Gợi ý: Biểu đồ chuỗi thời gian (time-series plot) thể hiện
+    giá trị mức nước bể $L_{T1}$ trong Dataset 2 trong một khoảng thời gian
+    bao gồm cả giai đoạn bình thường và giai đoạn tấn công.
+    Tô màu đỏ/hatch các khoảng thời gian có \texttt{ATT\_FLAG}=1.
+    Trục X: timestamp; Trục Y: mức nước (mét).
+    Hình này trực tiếp minh họa bản chất bài toán phát hiện bất thường
+    trên chuỗi thời gian.}
+    \vspace{1.8cm}\end{minipage}}
+  \caption{Chuỗi thời gian mức nước $L_{T1}$: so sánh giai đoạn bình thường và tấn công}
+  \label{fig:batadal-timeseries}
+\end{figure}
+
+Ngoài ra, đề tài xây dựng thêm \textbf{BATADAL\_synthetic.csv} --- tập dữ liệu
+tấn công tổng hợp --- bằng cách áp dụng các kịch bản tấn công giả lập
+(nhiễu Gaussian, can thiệp vào trạng thái bơm và mức nước bể) lên Dataset 1, nhằm
+tạo ra lớp dương (positive class) cho quá trình huấn luyện mô hình học máy.
+
+% ------------------------------------------------------------
 \subsection{Random Forest}
 
-\FILL{Nội dung}
+Random Forest là thuật toán học máy thuộc nhóm phương pháp ensemble, được Leo
+Breiman đề xuất năm 2001 \cite{breiman2001random}. Theo tài liệu chính thức của
+scikit-learn tại
+\url{https://scikit-learn.org/stable/modules/ensemble.html\#random-forests},
+Random Forest xây dựng một tập hợp (ensemble) gồm nhiều cây quyết định (decision
+tree) độc lập và tổng hợp kết quả dự đoán của chúng.
+
+\subsubsection{Cơ chế hoạt động}
+
+Random Forest kết hợp hai nguồn ngẫu nhiên để giảm phương sai (variance) của mô
+hình đơn lẻ:
+
+\begin{enumerate}[label=\arabic*.]
+  \item \textbf{Bootstrap Sampling (Bagging):} Mỗi cây được huấn luyện trên một
+    tập con dữ liệu được lấy mẫu ngẫu nhiên có hoàn lại (bootstrap sample) từ
+    tập huấn luyện gốc. Xấp xỉ $\frac{1}{3}$ số mẫu không xuất hiện trong
+    bootstrap sample của một cây gọi là \emph{out-of-bag (OOB) samples}, có thể
+    dùng để ước lượng lỗi tổng quát hóa.
+  \item \textbf{Random Feature Selection:} Tại mỗi nút chia (split node) trong
+    quá trình xây dựng cây, chỉ một tập con ngẫu nhiên gồm $m$ đặc trưng
+    (controlled by \texttt{max\_features}) được xem xét để chọn điểm chia tốt nhất.
+    Mặc định scikit-learn dùng $m = \sqrt{p}$ cho bài toán phân loại, với $p$ là
+    tổng số đặc trưng.
+\end{enumerate}
+
+Kết quả dự đoán cuối cùng là \emph{majority vote} của tất cả các cây đối với bài
+toán phân loại (classification), hoặc \emph{trung bình} đối với hồi quy
+(regression).
+
+\begin{figure}[H]
+  \centering
+  \setlength{\fboxsep}{12pt}
+  \fbox{\begin{minipage}{0.88\textwidth}\centering\vspace{1.8cm}
+    \FILL{Chèn hình tại đây}\\[0.6em]
+    \textit{Gợi ý: Sơ đồ cơ chế Random Forest Ensemble.
+    Phía trái: tập dữ liệu gốc. Từ đó vẽ 3--4 mũi tên sang
+    các bootstrap sample $D_1, D_2, D_3, D_4$ (mỗi tập có một số bản ghi trùng lặp).
+    Mỗi bootstrap sample sinh ra một Decision Tree $h_1, h_2, h_3, h_4$
+    (mỗi cây chọn ngẫu nhiên $\sqrt{p}$ đặc trưng tại mỗi nút).
+    Phía phải: các dự đoán từng cây được kết hợp qua Majority Vote
+    để ra kết quả cuối cùng (Bình thường / Bất thường).}
+    \vspace{1.8cm}\end{minipage}}
+  \caption{Cơ chế xây dựng và dự đoán của Random Forest Ensemble}
+  \label{fig:random-forest}
+\end{figure}
+
+\subsubsection{Feature Importance}
+
+Một ưu điểm quan trọng của Random Forest là khả năng đánh giá tầm quan trọng của
+từng đặc trưng (feature importance) thông qua chỉ số \emph{Mean Decrease in
+Impurity (MDI)}: tổng mức giảm độ không thuần nhất (Gini impurity hoặc entropy) do
+đặc trưng đó đóng góp qua tất cả các cây, được chuẩn hóa về tổng bằng 1. Giá trị
+\texttt{feature\_importances\_} càng cao, đặc trưng đó càng quan trọng trong việc
+phân tách lớp.
+
+\subsubsection{Ứng dụng trong đề tài}
+
+\begin{figure}[H]
+  \centering
+  \setlength{\fboxsep}{12pt}
+  \fbox{\begin{minipage}{0.88\textwidth}\centering\vspace{1.8cm}
+    \FILL{Chèn hình tại đây}\\[0.6em]
+    \textit{Gợi ý: Biểu đồ cột ngang (horizontal bar chart) thể hiện
+    Feature Importance (\texttt{feature\_importances\_}) của mô hình
+    Random Forest sau khi huấn luyện trên tập BATADAL.
+    Trục X: giá trị importance (0.0--max); Trục Y: tên 31 đặc trưng
+    (sắp xếp giảm dần theo importance).
+    Tô màu khác nhau cho 3 nhóm đặc trưng: $L_{Ti}$ (xanh dương),
+    $F_{PUj}$ (xanh lá), $S_{PUj}$ (cam).
+    Hình này được sinh ra từ script \texttt{train\_model.py} sau khi chạy
+    \texttt{clf.feature\_importances\_}.}
+    \vspace{1.8cm}\end{minipage}}
+  \caption{Biểu đồ tầm quan trọng đặc trưng (Feature Importance) của mô hình Random Forest}
+  \label{fig:feature-importance}
+\end{figure}
+
+Đề tài huấn luyện mô hình \texttt{RandomForestClassifier} (scikit-learn) với
+100 cây (\texttt{n\_estimators=100}) và tham số \texttt{class\_weight=`balanced'}
+để xử lý mất cân bằng lớp giữa mẫu bình thường (negative) và mẫu tấn công
+(positive). Mô hình nhận 31 đặc trưng vật lý ($L_{Ti}$, $F_{PUj}$, $S_{PUj}$,
+$S_{V2}$) và dự đoán nhãn nhị phân: 0 (bình thường) hoặc 1 (bất thường). Sau khi
+huấn luyện offline, mô hình được serialize thành file \texttt{anomaly\_model.pkl}
+và tích hợp vào Spark Structured Streaming thông qua broadcast variable và
+\texttt{pandas\_udf} để thực hiện inference theo thời gian thực trên từng
+micro-batch.
+
+Đánh giá mô hình sử dụng chiến lược \emph{stratified 75/25 split} và các chỉ số:
+Precision, Recall, F1-score và confusion matrix, nhằm đánh giá đúng hiệu năng
+trên tập dữ liệu mất cân bằng lớp đặc trưng của bài toán phát hiện bất thường.

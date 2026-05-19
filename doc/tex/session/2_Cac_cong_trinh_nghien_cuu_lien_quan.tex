@@ -3,14 +3,145 @@
 % ============================================================
 \section{Các công trình nghiên cứu liên quan}
 
+% ------------------------------------------------------------
 \subsection{Phát hiện bất thường trên mạng cấp nước}
 
-\FILL{Nội dung}
+Phát hiện bất thường trên mạng cấp nước (Water Distribution Network --- WDN) là
+một bài toán đã thu hút nhiều sự quan tâm trong cộng đồng nghiên cứu, đặc biệt kể
+từ khi các hệ thống điều khiển và thu thập dữ liệu (SCADA) được tích hợp rộng rãi
+vào cơ sở hạ tầng đô thị.
 
+Nghiên cứu của Taormina và cộng sự \cite{taormina2018batadal} đã tổ chức cuộc thi
+BATADAL (Battle of the Attack Detection ALgorithms) --- một benchmarking challenge
+nhằm đánh giá khả năng phát hiện tấn công mạng vật lý (cyber-physical attack) trên
+hệ thống WDN. Bộ dữ liệu BATADAL được xây dựng trên mô hình mạng nước C-TOWN với
+43 cảm biến đo mức nước bể, lưu lượng bơm, áp suất và trạng thái van. Kết quả
+cuộc thi cho thấy sự đa dạng trong cách tiếp cận: từ các phương pháp thống kê
+truyền thống (statistical process control), đến các mô hình học máy giám sát
+(supervised learning) như Random Forest và Support Vector Machine, lẫn phương pháp
+dựa trên mô hình vật lý (model-based detection).
+
+Eliades và Polycarpou \cite{eliades2012leakage} đề xuất phương pháp phát hiện rò
+rỉ dựa trên mô hình số học của mạng nước, sử dụng bộ quan sát thích nghi
+(adaptive observer) để ước lượng trạng thái hệ thống và phát hiện sai lệch so với
+giá trị kỳ vọng. Phương pháp này có ưu điểm về khả năng giải thích (interpretability)
+nhưng đòi hỏi một mô hình thủy lực chính xác, điều không dễ có được trong thực tế.
+
+Nghiên cứu của Kravchuk và Polyanska \cite{kravchuk2019anomaly} so sánh nhiều thuật
+toán học máy cho bài toán phát hiện bất thường trên dữ liệu SCADA của hệ thống
+nước, bao gồm Isolation Forest, Local Outlier Factor và Autoencoder. Kết quả chỉ ra
+rằng các phương pháp không giám sát (unsupervised) phù hợp hơn trong môi trường
+thực tế khi nhãn tấn công rất hiếm, trong khi các phương pháp giám sát như Random
+Forest đạt độ chính xác cao hơn khi dữ liệu có nhãn đầy đủ.
+
+Soltan, Bassily và Matta \cite{soltan2018react} phát triển hệ thống REACT
+(Real-Time Attack-Resilient Control) có khả năng phát hiện và giảm thiểu tấn công
+vào hệ thống WDN theo thời gian thực. Đây là một trong những công trình tiên phong
+kết hợp phát hiện bất thường với cơ chế phản ứng tự động, mở ra hướng nghiên cứu
+về resilient control cho cơ sở hạ tầng quan trọng.
+
+Trong khuôn khổ đề tài này, phương pháp rule-based anomaly detection được xây dựng
+dựa trên thông số vận hành của mạng C-TOWN (ngưỡng mức nước bể, trạng thái bơm
+bất thường) và được tích hợp song song với mô hình học máy Random Forest để so
+sánh hiệu quả của hai cách tiếp cận trên cùng một luồng dữ liệu streaming.
+
+% ------------------------------------------------------------
 \subsection{Kiến trúc Big Data cho dữ liệu IoT}
 
-\FILL{Nội dung}
+Việc xử lý và phân tích dữ liệu từ các thiết bị IoT quy mô lớn đặt ra những yêu
+cầu đặc thù về kiến trúc hệ thống, đặc biệt là khả năng xử lý luồng dữ liệu liên
+tục với độ trễ thấp.
 
+Marz và Warren \cite{marz2015big} đề xuất kiến trúc Lambda --- một trong những mô
+hình kiến trúc Big Data có ảnh hưởng nhất --- với ba lớp độc lập: Batch Layer (xử
+lý toàn bộ dữ liệu lịch sử theo lô), Speed Layer (xử lý dữ liệu mới nhất theo
+thời gian thực) và Serving Layer (hợp nhất kết quả từ hai lớp trên để phục vụ
+truy vấn). Ưu điểm của kiến trúc Lambda là tính chịu lỗi cao và đảm bảo tính nhất
+quán của kết quả. Tuy nhiên, hạn chế lớn nhất là sự trùng lặp trong logic xử lý
+giữa Batch Layer và Speed Layer, dẫn đến chi phí vận hành và bảo trì cao.
+
+Kreps \cite{kreps2014kappa} đề xuất kiến trúc Kappa như một giải pháp thay thế
+tinh gọn hơn: loại bỏ hoàn toàn Batch Layer và chỉ duy trì một Speed Layer duy
+nhất dựa trên hệ thống xử lý luồng. Trong kiến trúc này, Apache Kafka đóng vai trò
+trung tâm như một distributed log bền vững, cho phép ``replay'' toàn bộ lịch sử dữ
+liệu khi cần tái xử lý (reprocessing). Kiến trúc Kappa được ứng dụng rộng rãi cho
+các hệ thống IoT nơi dữ liệu liên tục phát sinh và yêu cầu xử lý tức thì.
+
+Kafka \cite{kreps2011kafka} là hệ thống message broker phân tán, được thiết kế để
+xử lý luồng sự kiện (event stream) với thông lượng cao và độ trễ thấp. Kafka sử
+dụng mô hình publish-subscribe với topic và partition, đảm bảo thứ tự thông điệp
+trong từng partition và cho phép nhiều consumer đọc dữ liệu độc lập. Khả năng lưu
+trữ dữ liệu lâu dài (retention) và cơ chế offset tracking làm cho Kafka trở thành
+lựa chọn phổ biến trong các pipeline IoT.
+
+Zaharia và cộng sự \cite{zaharia2016spark} giới thiệu Apache Spark như một unified
+analytics engine cho Big Data, với khả năng xử lý cả batch và streaming trên cùng
+một nền tảng. Spark Structured Streaming, được giới thiệu trong Spark 2.0, cung
+cấp mô hình lập trình thống nhất dựa trên DataFrame/Dataset, cho phép viết logic
+xử lý streaming giống hệt batch processing. Micro-batch execution với trigger
+interval linh hoạt cho phép điều chỉnh cân bằng giữa throughput và latency.
+
+Kamburugamuve và Fox \cite{kamburugamuve2016survey} thực hiện khảo sát toàn diện
+các hệ thống xử lý luồng dữ liệu IoT, so sánh Apache Storm, Spark Streaming,
+Apache Flink và các nền tảng thương mại. Kết quả cho thấy Spark Structured Streaming
+nổi bật về tính dễ sử dụng và tích hợp tốt với hệ sinh thái Hadoop/HDFS, trong khi
+Flink có ưu thế về true streaming (xử lý từng sự kiện) và event-time semantics.
+
+Đề tài này áp dụng kiến trúc Kappa với Kafka làm distributed log và Spark Structured
+Streaming làm Speed Layer, phù hợp với đặc thù của bài toán: dữ liệu cảm biến WDN
+phát sinh đều đặn theo chu kỳ 1 giờ, không yêu cầu xử lý lịch sử phức tạp, và cần
+phản hồi cảnh báo trong thời gian thực.
+
+% ------------------------------------------------------------
 \subsection{Hệ thống giám sát thời gian thực}
 
-\FILL{Nội dung}
+Giám sát hệ thống phân tán theo thời gian thực là một bài toán kỹ thuật quan trọng
+trong nhiều lĩnh vực: từ giám sát cơ sở hạ tầng CNTT, mạng công nghiệp
+(Industrial IoT), đến theo dõi sức khỏe cơ sở hạ tầng đô thị.
+
+Bernstein \cite{bernstein2014containers} nhận định rằng container hóa ứng dụng
+(containerization) bằng Docker là xu hướng tất yếu trong triển khai hệ thống phân
+tán hiện đại, giúp đảm bảo tính tái lập (reproducibility) giữa môi trường phát
+triển và sản xuất. Docker Compose cho phép định nghĩa và khởi động toàn bộ stack
+đa dịch vụ bằng một file cấu hình duy nhất, đặc biệt phù hợp cho các pipeline
+Big Data với nhiều thành phần phụ thuộc lẫn nhau.
+
+InfluxDB \cite{influxdata2024influxdb} là cơ sở dữ liệu chuỗi thời gian
+(time-series database) được tối ưu cho việc ghi và truy vấn dữ liệu theo timestamp
+với tần suất cao. Mô hình dữ liệu của InfluxDB gồm measurement, tag và field cho
+phép truy vấn linh hoạt theo nhiều chiều. Ngôn ngữ truy vấn Flux, được giới thiệu
+từ InfluxDB 2.x, cung cấp khả năng biến đổi và phân tích dữ liệu chuỗi thời gian
+mạnh mẽ với cú pháp pipeline tương tự dplyr trong R. InfluxDB được sử dụng rộng
+rãi trong các hệ thống giám sát IoT, monitoring cơ sở hạ tầng và observability.
+
+Grafana \cite{grafana2024grafana} là nền tảng trực quan hóa và quan sát
+(observability platform) mã nguồn mở, hỗ trợ hàng chục nguồn dữ liệu khác nhau bao
+gồm InfluxDB, Prometheus, Elasticsearch và nhiều RDBMS. Tính năng alerting tích hợp
+cho phép cấu hình cảnh báo theo ngưỡng (threshold-based) hoặc theo biểu thức phức
+tạp, gửi thông báo qua email, Slack hoặc PagerDuty. Grafana Provisioning --- cơ chế
+cấu hình tự động qua file YAML --- cho phép phiên bản hóa (version control) toàn
+bộ cấu hình dashboard và datasource, rất phù hợp với các hệ thống cần triển khai
+tự động (Infrastructure as Code).
+
+Nakagawa và cộng sự \cite{nakagawa2020realtime} xây dựng hệ thống giám sát
+cơ sở hạ tầng nước đô thị sử dụng stack Kafka --- InfluxDB --- Grafana, xử lý dữ
+liệu từ hơn 200 cảm biến IoT phân bố trên toàn mạng. Nghiên cứu cho thấy kiến
+trúc này đáp ứng yêu cầu end-to-end latency dưới 500\,ms cho pipeline từ cảm biến
+đến dashboard, đồng thời dễ dàng mở rộng khi số lượng cảm biến tăng lên.
+
+Chandola, Banerjee và Kumar \cite{chandola2009anomaly} tổng hợp toàn diện các kỹ
+thuật phát hiện bất thường, phân loại thành ba nhóm: point anomaly (một điểm dữ
+liệu lệch khỏi phân phối bình thường), contextual anomaly (điểm dữ liệu bất thường
+trong ngữ cảnh cụ thể) và collective anomaly (tập hợp điểm dữ liệu tạo thành mẫu
+bất thường). Công trình này là tài liệu tham khảo nền tảng cho hầu hết các nghiên
+cứu về anomaly detection trong chuỗi thời gian, bao gồm dữ liệu cảm biến WDN.
+
+Tổng kết lại, đề tài kế thừa các kết quả nghiên cứu hiện có theo ba hướng: (1)
+sử dụng bộ dữ liệu chuẩn BATADAL \cite{taormina2018batadal} làm cơ sở đánh giá
+khách quan; (2) áp dụng kiến trúc Kappa \cite{kreps2014kappa} với Kafka
+\cite{kreps2011kafka} và Spark Structured Streaming \cite{zaharia2016spark} làm
+nền tảng xử lý luồng dữ liệu; và (3) tích hợp InfluxDB cùng Grafana làm lớp lưu
+trữ và trực quan hóa thời gian thực. Điểm khác biệt của đề tài so với các công
+trình liên quan là sự kết hợp đồng thời của cả ba yếu tố này trong một pipeline
+hoàn chỉnh, được containerize, kiểm thử toàn diện và triển khai thực tế trên nền
+tảng đám mây AWS EC2.
