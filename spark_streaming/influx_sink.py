@@ -33,6 +33,7 @@ _INT_FIELDS = [
     "disp_PU6","disp_PU7",
     "disp_PU8",
     "disp_PU10","disp_PU11",
+    "ml_alert",
 ]
 
 def write_to_influx(df_batch, batch_id):

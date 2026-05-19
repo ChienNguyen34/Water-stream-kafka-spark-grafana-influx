@@ -14,7 +14,7 @@ GRAFANA_URL = "http://localhost:3000"
 GRAFANA_USER = "admin"
 GRAFANA_PASSWORD = "adminpassword"
 DASHBOARD_UID = "batadal-water"
-EXPECTED_PANEL_COUNT = 8
+EXPECTED_PANEL_COUNT = 10
 
 
 def _auth_header() -> str:

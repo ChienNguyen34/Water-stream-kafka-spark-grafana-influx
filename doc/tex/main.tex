@@ -1,0 +1,256 @@
+% ============================================================
+% ============================================================
+\documentclass[12pt, a4paper]{article}
+
+% --- Encoding & Vietnamese ---
+% \usepackage[utf8]{inputenc}
+% \usepackage[T5]{fontenc}
+% \usepackage[vietnamese]{babel}
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+% --- Layout ---
+\usepackage[left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% --- Math ---
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{algorithm2e}
+% --- Tables ---
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+
+% --- Graphics ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+
+% --- Code listings ---
+\usepackage{listings}
+\usepackage{xcolor}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{teal},
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  xleftmargin=1.5em,
+}
+
+% --- Hyperlinks ---
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+\usepackage{lastpage}
+
+% --- Miscellaneous ---
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{microtype}
+\usepackage{indentfirst}
+\usepackage{parskip}
+\usepackage{picture}
+% ---Additional lib
+\usepackage{xltabular}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, calc}
+
+% --- Colors for listings ---
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+% --- Placeholder command ---
+\newcommand{\FILL}[1]{\textbf{\textcolor{red}{[#1]}}}
+
+% --- Header/Footer (HCMUT style) ---
+\setlength{\headheight}{40pt}
+\pagestyle{fancy}
+\fancyhead{}
+\fancyhead[L]{
+  \begin{tabular}{rl}
+    \begin{picture}(25,15)(0,0)
+      \put(0,-8){\includegraphics[width=8mm,height=8mm]{image/hcmut.png}}
+    \end{picture} &
+    \begin{tabular}{l}
+      \textbf{Trường Đại Học Bách Khoa Tp.Hồ Chí Minh}\\
+      \textbf{Khoa Khoa Học và Kỹ Thuật Máy Tính}
+    \end{tabular}
+  \end{tabular}
+}
+\fancyhead[R]{}
+\fancyfoot{}
+\fancyfoot[L]{\scriptsize Hệ thống thông minh - Học kì 252}
+\fancyfoot[R]{\scriptsize Trang {\thepage}/\pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+% --- Code listing style ---
+\lstset{
+  frame=tb,
+  language=Python,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3,
+  stepnumber=1,
+  numbersep=5pt,
+  firstnumber=1,
+  numberfirstline=true
+}
+
+% --- Numbered subsubsubsection ---
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{3}
+\makeatletter
+\newcounter{subsubsubsection}[subsubsection]
+\renewcommand\thesubsubsubsection{\thesubsubsection.\@alph\c@subsubsubsection}
+\newcommand\subsubsubsection{\@startsection{subsubsubsection}{4}{\z@}%
+  {-3.25ex\@plus -1ex \@minus -.2ex}%
+  {1.5ex \@plus .2ex}%
+  {\normalfont\normalsize\bfseries}}
+\newcommand*\l@subsubsubsection{\@dottedtocline{3}{10.0em}{4.1em}}
+\newcommand*{\subsubsubsectionmark}[1]{}
+\makeatother
+
+% ============================================================
+\begin{document}
+
+% --- Title Page (HCMUT style) ---
+\begin{titlepage}
+\begin{center}
+  ĐẠI HỌC QUỐC GIA THÀNH PHỐ HỒ CHÍ MINH \\
+  TRƯỜNG ĐẠI HỌC BÁCH KHOA \\
+  KHOA KHOA HỌC -- KỸ THUẬT MÁY TÍNH
+\end{center}
+
+\vspace{1cm}
+
+\begin{figure}[h!]
+  \begin{center}
+    \includegraphics[width=3cm]{image/hcmut.png}
+  \end{center}
+\end{figure}
+
+\vspace{1cm}
+
+\begin{center}
+\begin{tabular}{p{14cm}} % Đổi từ 'l' thành 'p{14cm}' để bảng tự động xuống dòng
+	\textbf{\Large BIG DATA} \\
+	\\[-0.2cm] 
+	\hline
+	\\
+	\textbf{\Large BÁO CÁO CUỐI KỲ DỮ LIỆU LỚN} \\
+	\\[0.1cm]
+	\textbf{\Huge Big data analytics for IoT-based water meters} 
+	\\[0.1cm]
+	\hline
+\end{tabular}
+\end{center}
+
+\vspace{3cm}
+
+\begin{table}[h]
+  \begin{tabular}{rr l l}
+    \hspace{5cm} & GVHD: & \multicolumn{2}{l}{Thoại Nam} \\ [0.5ex] 
+                 & SV:   & Nguyễn Minh Chiến & -- 2570179 \\
+                 &       & Nguyễn Trọng Nhật & -- 2570471 \\
+                 &       & Nguyễn Ngọc Duy   & -- 2210522 \\
+  \end{tabular}
+\end{table}
+
+\vspace{1cm}
+
+\begin{center}
+  {\footnotesize TP. HỒ CHÍ MINH, THÁNG 5/2026}
+\end{center}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+\listoffigures
+\addcontentsline{toc}{section}{Danh sách hình ảnh}
+\clearpage
+
+\listoftables
+\addcontentsline{toc}{section}{Danh sách bảng}
+\clearpage
+% ============================================================
+% 
+\input{session/1_Tong_quan}
+\clearpage
+\newpage
+% 
+\input{session/2_Cac_cong_trinh_nghien_cuu_lien_quan}
+\clearpage
+\newpage
+% 
+\input{session/3_Co_so_ly_thuyet}
+\clearpage
+\newpage
+% 
+\input{session/4_Phan_tich_van_de}
+\clearpage
+\newpage
+% 
+\input{session/5_Giai_phap_de_suat_va_hien_thuc}
+\clearpage
+\newpage
+% .
+\input{session/6_Thuc_nghiem}
+\clearpage
+\newpage
+\input{session/7_Ket_luan_va_huong_phat_trien}
+% ============================================================
+\clearpage
+\newpage
+\begin{thebibliography}{99}
+
+\bibitem{taormina2018batadal}
+R. Taormina et al.,
+``Battle of the Attack Detection Algorithms: Developing a Framework for
+Event-Based Anomaly Detection in Water Distribution Systems,''
+\emph{Journal of Water Resources Planning and Management},
+vol.~144, no.~4, p.~04018048, Apr. 2018.
+\newblock DOI: \href{https://doi.org/10.1061/(ASCE)WR.1943-5452.0000969}{10.1061/(ASCE)WR.1943-5452.0000969}
+
+\bibitem{kreps2014kappa}
+J. Kreps,
+``Questioning the Lambda Architecture,''
+\emph{O'Reilly Radar}, Jul. 2014.
+[Online]. Available:
+\url{https://www.oreilly.com/radar/questioning-the-lambda-architecture/}
+
+\bibitem{kreps2011kafka}
+J. Kreps, N. Narkhede, and J. Rao,
+``Kafka: A Distributed Messaging System for Log Processing,''
+in \emph{Proc. 6th Int. Workshop on Networking Meets Databases (NetDB)},
+Athens, Greece, Jun. 2011.
+
+\bibitem{zaharia2016spark}
+M. Zaharia et al.,
+``Apache Spark: A Unified Engine for Big Data Processing,''
+\emph{Communications of the ACM}, vol.~59, no.~11, pp.~56--65, Nov. 2016.
+\newblock DOI: \href{https://doi.org/10.1145/2934664}{10.1145/2934664}
+
+\end{thebibliography}
+
+
+
+
+
+\end{document}

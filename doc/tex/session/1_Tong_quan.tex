@@ -1,0 +1,181 @@
+% ============================================================
+% PHẦN 1: TỔNG QUAN
+% ============================================================
+\section{Tổng quan}
+
+% ------------------------------------------------------------
+\subsection{Giới thiệu đề tài}
+
+Trong thập kỷ gần đây, sự bùng nổ của Internet of Things (IoT) đã mang lại khả năng
+giám sát liên tục và thu thập dữ liệu theo thời gian thực từ các hệ thống vật lý quy
+mô lớn. Một trong những lĩnh vực ứng dụng có tầm quan trọng đặc biệt là quản lý mạng
+cấp nước đô thị (Water Distribution Network --- WDN): hệ thống gồm hàng trăm cảm
+biến đo mức nước, lưu lượng, áp suất và trạng thái bơm, liên tục phát sinh luồng dữ
+liệu khổng lồ cần được thu thập, xử lý và phân tích kịp thời
+\cite{taormina2018batadal}.
+
+Tuy nhiên, việc xử lý và khai thác luồng dữ liệu quy mô lớn từ các hệ thống WDN đặt
+ra nhiều thách thức kỹ thuật: khối lượng dữ liệu phát sinh liên tục (high-velocity),
+yêu cầu độ trễ thấp (low-latency) trong phát hiện sự cố, và sự phức tạp trong việc
+tích hợp nhiều thành phần xử lý phân tán. Các kiến trúc Big Data truyền thống như
+Lambda Architecture thường phải duy trì song song cả Batch Layer lẫn Speed Layer,
+dẫn đến sự trùng lặp trong logic xử lý. Kiến trúc Kappa \cite{kreps2014kappa} đề xuất
+cách tiếp cận tinh gọn hơn: chỉ sử dụng một Speed Layer duy nhất (streaming-only),
+giúp đơn giản hóa toàn bộ pipeline mà vẫn đáp ứng yêu cầu xử lý thời gian thực.
+
+Bộ dữ liệu BATADAL (Battle of the Attack Detection ALgorithms) \cite{taormina2018batadal}
+là một benchmark chuẩn được xây dựng nhằm đánh giá khả năng phát hiện bất thường
+(anomaly detection) trên dữ liệu WDN. BATADAL cung cấp dữ liệu vận hành của hệ thống
+C-TOWN --- một mạng nước đô thị mô phỏng gồm 43 cảm biến --- kèm theo nhãn tấn công
+(attack label) tương ứng. Đây là nguồn dữ liệu lý tưởng để xây dựng và kiểm chứng
+một hệ thống Big Data end-to-end: từ việc giả lập luồng dữ liệu IoT, xử lý streaming,
+phát hiện sự cố, đến trực quan hóa kết quả theo thời gian thực.
+
+Đề tài này xây dựng một pipeline phân tích dữ liệu lớn hoàn chỉnh dựa trên bộ dữ
+liệu BATADAL, áp dụng kiến trúc Kappa với các công nghệ mã nguồn mở hiện đại:
+Apache Kafka \cite{kreps2011kafka} làm message broker, Apache Spark Structured
+Streaming \cite{zaharia2016spark} làm Speed Layer, InfluxDB làm time-series database,
+và Grafana làm lớp trực quan hóa thời gian thực. Toàn bộ hệ thống được containerize
+bằng Docker, hỗ trợ triển khai cả ở môi trường cục bộ lẫn trên nền tảng đám mây
+(AWS EC2).
+
+% ------------------------------------------------------------
+\subsection{Ý nghĩa đề tài}
+
+Đề tài mang lại ý nghĩa thiết thực trên nhiều phương diện:
+
+\textbf{Về mặt kỹ thuật}, đề tài minh chứng cho khả năng xây dựng một hệ thống Big
+Data hoàn chỉnh --- từ data ingestion, stream processing, storage đến visualization
+--- hoàn toàn bằng các công nghệ mã nguồn mở, có thể triển khai trên một máy đơn
+hoặc mở rộng lên cụm phân tán (distributed cluster). Kiến trúc được thiết kế theo
+nguyên tắc containerization, đảm bảo tính tái lập (reproducibility) và dễ dàng mở
+rộng quy mô (scalability).
+
+\textbf{Về mặt ứng dụng}, hệ thống cung cấp khả năng giám sát mạng cấp nước theo
+thời gian thực: phát hiện sớm các sự cố rò rỉ, tấn công mạng vật lý
+(cyber-physical attack) hoặc hoạt động bơm bất thường thông qua cơ chế rule-based
+anomaly detection dựa trên đặc tả kỹ thuật của mạng C-TOWN. Điều này có ý nghĩa
+lớn trong bối cảnh cơ sở hạ tầng nước đô thị ngày càng được số hóa và trở thành
+mục tiêu của các mối đe dọa an ninh mạng \cite{taormina2018batadal}.
+
+\textbf{Về mặt học thuật}, đề tài vận dụng và kiểm chứng các khái niệm cốt lõi
+trong lĩnh vực Big Data và Data Engineering: kiến trúc luồng dữ liệu (streaming
+architecture), hợp đồng dữ liệu (data contract), phân tầng dữ liệu (Bronze/Silver
+data tiers), kiểm thử hệ thống phân tán (unit test, integration test và end-to-end
+test), và triển khai đám mây (cloud deployment) với các tiêu chuẩn bảo mật hiện đại
+(container security scan bằng Trivy).
+
+% ------------------------------------------------------------
+\subsection{Phạm vi đề tài}
+
+\subsubsection{Những nội dung thực hiện}
+
+Trong khuôn khổ đề tài, nhóm thực hiện các nội dung sau:
+
+\begin{enumerate}[label=\arabic*.]
+  \item \textbf{Thiết kế kiến trúc hệ thống:} Xây dựng sơ đồ luồng dữ liệu theo
+    kiến trúc Kappa với pipeline: IoT Simulator (Python) $\rightarrow$ Apache Kafka
+    $\rightarrow$ Spark Structured Streaming $\rightarrow$ InfluxDB $\rightarrow$
+    Grafana. Containerize toàn bộ hệ thống bằng Docker Compose, hỗ trợ cả môi
+    trường local và cloud.
+
+  \item \textbf{Định nghĩa tập dữ liệu cho bài toán:} Phân tích và lựa chọn tập dữ
+    liệu phù hợp từ bộ BATADAL: sử dụng \texttt{BATADAL\_dataset03.csv} (8\,761 bản
+    ghi, toàn bộ nhãn bình thường) làm nguồn lớp âm (negative class); xây dựng
+    \texttt{BATADAL\_synthetic.csv} bổ sung các tình huống tấn công giả lập làm
+    nguồn lớp dương (positive class). Loại bỏ \texttt{BATADAL\_dataset04.csv} khỏi
+    quá trình huấn luyện do nhãn \texttt{ATT\_FLAG\,=\,-999} (dữ liệu mù, chưa gán
+    nhãn). Lựa chọn 31 đặc trưng vật lý (mức nước bể $L_{Ti}$, lưu lượng bơm
+    $F_{PUj}$, trạng thái đóng/mở $S_{PUj}$, $S_{V2}$), loại bỏ đặc trưng thời
+    gian do thuật toán time compression làm mất ý nghĩa tuyệt đối của timestamp.
+
+  \item \textbf{Xây dựng IoT Data Simulator:} Viết Python producer đọc dữ liệu từ
+    file CSV (BATADAL dataset03/04), áp dụng thuật toán time compression để giả lập
+    luồng dữ liệu real-time với tốc độ tối thiểu 50 messages/giây, gửi vào Kafka
+    topic \texttt{water\_stream}.
+
+  \item \textbf{Xây dựng Speed Layer với Spark Structured Streaming:} Consume dữ
+    liệu từ Kafka, thực hiện tiền xử lý (lọc null, ép kiểu), áp dụng rule-based
+    anomaly detection dựa trên thông số vận hành của mạng C-TOWN, ghi kết quả vào
+    InfluxDB (measurement \texttt{water\_telemetry}).
+
+  \item \textbf{Lưu trữ và trực quan hóa:} Sử dụng InfluxDB làm time-series database
+    để lưu trữ dữ liệu telemetry và cờ cảnh báo. Xây dựng Grafana dashboard hiển thị
+    trạng thái mạng nước theo thời gian thực, bao gồm mức nước bể chứa, trạng thái
+    bơm, áp suất và cảnh báo sự cố.
+
+  \item \textbf{Huấn luyện mô hình ML phát hiện bất thường (offline):} Xây dựng
+    module \texttt{train\_model.py} huấn luyện mô hình Random Forest Classifier
+    (100 cây, \texttt{class\_weight=``balanced''}) trên tập dữ liệu kết hợp
+    dataset03 và synthetic. Đánh giá mô hình theo chiến lược stratified 75/25 split,
+    tính Precision, Recall, F1-score và in confusion matrix. Mô hình huấn luyện
+    trên toàn bộ dữ liệu được lưu ra \texttt{anomaly\_model.pkl}. Tiếp theo,
+    module \texttt{stream\_processor.py} tải mô hình, phân phối đến các executor
+    thông qua Spark broadcast variable, và gọi inference trên từng micro-batch
+    bằng \texttt{pandas\_udf}, ghi kết quả dự đoán vào trường \texttt{ml\_alert}
+    trong InfluxDB song song với cơ chế rule-based, cho phép so sánh hai nguồn
+    cảnh báo trên cùng một Grafana dashboard.
+
+  \item \textbf{Kiểm thử hệ thống:} Viết và thực thi đầy đủ unit tests, integration
+    tests và end-to-end (E2E) tests với code coverage $\geq 100\%$. Thực hiện container
+    security scan bằng Trivy nhằm đảm bảo không có lỗ hổng bảo mật mức CRITICAL.
+
+  \item \textbf{Triển khai đám mây:} Triển khai các dịch vụ backend (Kafka, InfluxDB,
+    Grafana) lên AWS EC2 (Singapore region, Ubuntu 24.04), cấu hình Security Group và
+    tường lửa UFW, cho phép Spark driver và producer kết nối từ máy local vào cloud
+    theo mô hình hybrid deployment.
+\end{enumerate}
+
+\subsubsection{Những nội dung không thực hiện}
+
+Trong phạm vi của đề tài, nhóm không thực hiện các nội dung sau:
+
+\begin{enumerate}[label=\arabic*.]
+  \item \textbf{Batch Layer:} Đề tài theo kiến trúc Kappa (streaming-only), do đó
+    không xây dựng Batch Layer để tái xử lý dữ liệu lịch sử theo mô hình Lambda
+    Architecture.
+
+  \item \textbf{Infrastructure as Code (IaC):} Đề tài không sử dụng các công cụ
+    như Terraform hay Ansible để tự động hóa việc khởi tạo và cấu hình hạ tầng
+    đám mây.
+
+  \item \textbf{Hệ thống cảnh báo ngoài Grafana:} Đề tài không tích hợp các kênh
+    thông báo bên ngoài (email, Slack, PagerDuty, v.v.) khi phát hiện sự cố. Cảnh
+    báo chỉ được hiển thị trực quan trong Grafana dashboard.
+
+  \item \textbf{Bộ dữ liệu điện (Electricity dataset):} Mặc dù bộ dữ liệu
+    \textit{Electricity Load Diagrams 2011--2014} (UCI) có trong thư mục dataset,
+    đề tài này chỉ tập trung vào bộ dữ liệu nước BATADAL. Bộ dữ liệu điện không
+    được sử dụng trong pipeline.
+\end{enumerate}
+
+% ------------------------------------------------------------
+\subsection{Bố cục bài báo cáo}
+
+Bài báo cáo được tổ chức thành bảy phần như sau:
+
+\textbf{Phần 1 --- Tổng quan} (phần hiện tại): Giới thiệu bối cảnh đề tài, ý nghĩa,
+phạm vi thực hiện và bố cục báo cáo.
+
+\textbf{Phần 2 --- Các công trình nghiên cứu liên quan}: Trình bày tổng quan các
+nghiên cứu về phát hiện bất thường trong mạng cấp nước, kiến trúc Big Data cho
+dữ liệu IoT, và các hệ thống giám sát thời gian thực.
+
+\textbf{Phần 3 --- Cơ sở lý thuyết}: Trình bày các kiến thức nền tảng về kiến trúc
+Kappa, Apache Kafka, Spark Structured Streaming, InfluxDB, Grafana, và bộ dữ liệu
+BATADAL.
+
+\textbf{Phần 4 --- Phân tích vấn đề}: Phân tích yêu cầu hệ thống, đặc điểm dữ liệu
+BATADAL, và các thách thức kỹ thuật khi xây dựng pipeline phân tích dữ liệu lớn
+cho IoT mạng nước.
+
+\textbf{Phần 5 --- Giải pháp đề xuất và hiện thực}: Mô tả chi tiết kiến trúc hệ
+thống, thiết kế từng component trong pipeline, và cách triển khai trên môi trường
+Docker và AWS EC2.
+
+\textbf{Phần 6 --- Thực nghiệm}: Trình bày kết quả kiểm thử (unit, integration,
+E2E), kết quả phát hiện bất thường trên bộ dữ liệu BATADAL, và đánh giá hiệu
+năng hệ thống (throughput, latency).
+
+\textbf{Phần 7 --- Kết luận và hướng phát triển}: Tổng kết kết quả đạt được, nhận
+xét về các hạn chế và đề xuất các hướng mở rộng trong tương lai.

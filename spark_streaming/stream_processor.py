@@ -1,11 +1,23 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType
 from pyspark.sql.functions import from_json, col, when, lit
+from pyspark.sql.functions import pandas_udf
+from pyspark.sql.types import IntegerType as IntType
 from influx_sink import write_to_influx
 import os
+import pickle
 
 KAFKA_BROKER = os.getenv("KAFKA_BROKER", "kafka:9092")
 KAFKA_TOPIC  = os.getenv("KAFKA_TOPIC",  "water_stream")
+
+# ML model features (must match train_model.py ML_FEATURES order)
+_ML_FEATURES = [
+    "L_T1","L_T2","L_T3","L_T4","L_T5","L_T6","L_T7",
+    "F_PU1","F_PU2","F_PU3","F_PU4","F_PU5","F_PU6",
+    "F_PU7","F_PU8","F_PU9","F_PU10","F_PU11","F_V2",
+    "S_PU1","S_PU2","S_PU3","S_PU4","S_PU5","S_PU6",
+    "S_PU7","S_PU8","S_PU9","S_PU10","S_PU11","S_V2",
+]
 
 WATER_SCHEMA = StructType([
     StructField("timestamp", StringType(), True),
@@ -65,6 +77,27 @@ spark = SparkSession.builder \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("WARN")
+
+# ── ML model: broadcast to all executors ─────────────────────────────────────
+_MODEL_PATH = os.path.join(os.path.dirname(__file__), "anomaly_model.pkl")
+if os.path.exists(_MODEL_PATH):
+    with open(_MODEL_PATH, "rb") as _f:
+        _bc_model = spark.sparkContext.broadcast(pickle.load(_f))
+
+    @pandas_udf(IntType())
+    def _ml_predict(*cols):
+        import pandas as pd
+        df_feat = pd.concat(list(cols), axis=1)
+        df_feat.columns = _ML_FEATURES
+        df_feat = df_feat.fillna(0.0)
+        preds = _bc_model.value.predict(df_feat)
+        return pd.Series(preds.astype(int))
+
+    _ml_available = True
+    print("[ML] anomaly_model.pkl loaded — ml_alert active")
+else:
+    _ml_available = False
+    print("[ML] anomaly_model.pkl not found — ml_alert defaults to 0")
 
 df_raw = spark.readStream \
     .format("kafka") \
@@ -178,6 +211,15 @@ df_flagged = df_flagged \
         .when((col("S_PU11") == 0) & (col("L_T7") < 1.0), lit(2))
         .otherwise(col("S_PU11").cast("integer"))
     )
+
+# ── ML Early Warning ──────────────────────────────────────────────────────────
+if _ml_available:
+    df_flagged = df_flagged.withColumn(
+        "ml_alert",
+        _ml_predict(*[col(f) for f in _ML_FEATURES])
+    )
+else:
+    df_flagged = df_flagged.withColumn("ml_alert", lit(0))
 
 query = df_flagged.writeStream \
     .foreachBatch(write_to_influx) \

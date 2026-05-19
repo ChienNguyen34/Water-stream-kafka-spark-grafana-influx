@@ -26,7 +26,7 @@ GRAFANA_URL = os.environ.get("CLOUD_GRAFANA_URL", DEFAULT_CLOUD_URL)
 GRAFANA_USER = os.environ.get("CLOUD_GRAFANA_USER", "admin")
 GRAFANA_PASSWORD = os.environ.get("CLOUD_GRAFANA_PASSWORD", "adminpassword")
 DASHBOARD_UID = "batadal-water"
-EXPECTED_PANEL_COUNT = 8
+EXPECTED_PANEL_COUNT = 10
 
 
 def pytest_addoption(parser):
