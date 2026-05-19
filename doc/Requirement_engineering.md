@@ -35,7 +35,7 @@
 - [ ] **[DE-105] Task: Triển khai Message Broker (Kafka Cluster)**
   - **Mô tả:** Dựng hạ tầng thu thập sự kiện.
   - **Acceptance Criteria (DoD):**
-    - [ ] Viết file `docker-compose.yml` định nghĩa Zookeeper và Kafka.
+    - [ ] Viết file `docker-compose.yml` định nghĩa Kafka + Kraft.
     - [ ] Khởi tạo thành công topic `water_stream`.
     - [ ] Cấu hình thành công persistent volume để không mất data log khi restart.
 

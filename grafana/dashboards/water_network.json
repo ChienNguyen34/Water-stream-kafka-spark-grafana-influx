@@ -2401,8 +2401,8 @@
       "id": 11,
       "title": "ML Anomaly Status",
       "type": "stat",
-      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "gridPos": { "x": 0, "y": 83, "w": 4, "h": 4 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-water" },
       "targets": [
         {
           "refId": "A",
@@ -2439,8 +2439,8 @@
       "id": 12,
       "title": "ML Alert History",
       "type": "timeseries",
-      "gridPos": { "x": 4, "y": 0, "w": 20, "h": 4 },
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "gridPos": { "x": 4, "y": 83, "w": 20, "h": 4 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-water" },
       "targets": [
         {
           "refId": "A",

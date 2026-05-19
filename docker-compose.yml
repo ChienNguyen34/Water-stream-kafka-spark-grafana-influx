@@ -147,6 +147,7 @@ services:
       "
     volumes:
       - ./spark_streaming:/opt/spark-apps
+      - ./dataset:/opt/dataset
       - spark_checkpoint:/tmp/spark-checkpoint
       - ivy_cache:/tmp/.ivy2
     restart: on-failure
